@@ -12,7 +12,7 @@ All current methods (as of 1 Dec 2015) implemented and can be used as promises o
 
 ### Version
 
-0.1.1
+0.1.2
 
 ### Known issues
 
