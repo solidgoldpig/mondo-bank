@@ -160,6 +160,13 @@ Deregister attachment
     deregisterAttachmentPromise = mondo.deregisterAttachment(attachment_id, access_token)
 
 
+## Documentation
+
+    npm run docs
+
+This generates documentation with jsdoc in the docs directory (ignored by git) and also updates the README.md file.
+
+
 ## Known issues
 
 - No tests

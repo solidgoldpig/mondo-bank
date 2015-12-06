@@ -2,6 +2,7 @@
 
 import fs from 'fs'
 import path from 'path'
+import tmp from 'tmp'
 import rimraf from 'rimraf'
 import { execSync } from 'child_process'
 import cheerio from 'cheerio'
@@ -9,11 +10,11 @@ import toMarkdown from 'to-markdown'
 
 let packagePath = path.resolve(__dirname, '..', 'package.json')
 let inputPath = './lib/mondo.js'
-let tmpDocPath = '/tmp/jsdoc/mondo-bank/lib/mondo.js'
+let tmpDocPath = tmp.dirSync().name + '/mondo.js'
 let jsdocConf = './dev/jsdoc.conf.json'
 let readmePath = './README.md'
 let readmeTemplate = './dev/README.md.tmpl'
-let docsPath = '/tmp/mondo-docs/'
+let docsPath = path.resolve(__dirname, '..', 'docs')
 let outputFiles = ['module-mondo-bank.html', 'mondo.js.html']
 let readmeMethodsFile = outputFiles[0]
 
@@ -30,6 +31,7 @@ mondoContents = mondoContents
   .replace(/See (https*:\/\/\S+)/g, 'See [$1]($1)')
   .replace(/@method /g, function () {
     charCount++
+    // worry about this when it looks lime there will be more than 26 methods ;)
     if (charCount === charRange[1]) {
       charCount = charRange[0] - 1
     }
@@ -47,14 +49,14 @@ execSync(jsdocCommand)
 console.log('Generated docs')
 
 outputFiles.forEach(function (outputFile) {
-  let outputPath = docsPath + outputFile
+  let outputPath = path.resolve(docsPath, outputFile)
   let mondoOutput = fs.readFileSync(outputPath, 'utf-8')
   mondoOutput = mondoOutput.replace(/\w+___/g, '')
   fs.writeFileSync(outputPath, mondoOutput)
 })
 console.log('Post-processed docs output')
 
-let htmlInput = fs.readFileSync(docsPath + readmeMethodsFile, 'utf-8')
+let htmlInput = fs.readFileSync(path.resolve(docsPath, readmeMethodsFile), 'utf-8')
 
 let $dom = cheerio.load(htmlInput)
 $dom('table, h4.name, h5, dl, .param-desc').remove()
