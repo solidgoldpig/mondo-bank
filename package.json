@@ -1,6 +1,6 @@
 {
   "name": "mondo-bank",
-  "version": "0.1.3-rc.1",
+  "version": "0.1.3",
   "description": "Node wrapper for Mondo API",
   "main": "lib/mondo.js",
   "scripts": {
@@ -18,7 +18,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/solidgoldpig/mondo-bank.git#0.1.2"
+    "url": "git://github.com/solidgoldpig/mondo-bank.git#0.1.3"
   },
   "dependencies": {
     "lodash": "^3.10.1",

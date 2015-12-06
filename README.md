@@ -9,7 +9,7 @@ See https://getmondo.co.uk/docs
 
 ## Version
 
-0.1.3-rc.1
+0.1.3
 
 
 ## Installation
