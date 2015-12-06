@@ -1,0 +1,23 @@
+{
+    "tags": {
+        "allowUnknownTags": true,
+        "dictionaries": ["jsdoc","closure"]
+    },
+    "source": {
+        "exclude": ["spec/*", "spec\\*", "node_modules/*", "node_modules\\*"],
+        "XincludePattern": ".+\\.(js(doc)?|hbs\\.doc|hbs|less|properties)$",
+        "XexcludePattern": "((^|\\/|\\\\)_|lib\/|node_modules\/)"
+    },
+    "templates": {
+        "cleverLinks": false,
+        "monospaceLinks": false
+    },
+    "plugins": ["plugins/markdown"],
+    "markdown": {
+        "tags": ["todo"]
+    },
+    "opts": {
+        "access": "all",
+        "recurse": true
+    }
+}
