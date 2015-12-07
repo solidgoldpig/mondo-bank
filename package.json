@@ -7,7 +7,7 @@
     "test": "npm run unit-tests",
     "unit-tests": "jasmine spec/unit/**.unit.spec.js",
     "integration-tests": "jasmine spec/integration/**.integration.spec.js",
-    "prepublish": "npm run bumptag && npm run docs",
+    "flightcheck": "npm run bumptag && npm run docs",
     "bumptag": "babel-node dev/bumptag.js",
     "docs": "babel-node dev/generatedocs.js"
   },
