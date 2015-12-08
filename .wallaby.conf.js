@@ -9,7 +9,7 @@ module.exports = function (wallaby) {
       pattern: 'package.json',
       load: false
     }, {
-      pattern: 'api.config.json',
+      pattern: 'lib/api.values.json',
       load: false
     }],
     tests: [
