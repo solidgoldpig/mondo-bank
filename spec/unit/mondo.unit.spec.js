@@ -127,11 +127,6 @@ describe('Mondo unit tests', function () {
         client_secret: credentials.client_secret
       }
       function refreshTokenNock () {
-        // var url = methodPaths.refreshToken
-        // knocker({
-        //  url: url,
-        //  form: successCreds
-        // })
         nock(apiHost)
           .post(methodPaths.refreshToken, successCreds)
           .reply(200, 'success')
@@ -291,6 +286,35 @@ describe('Mondo unit tests', function () {
       mondo.transaction({
         transaction_id: transaction_id,
         expand: 'merchant'
+      }, access_token, testSuccess(done))
+    })
+  })
+
+  describe('Annotating transaction', function () {
+    var url = methodPaths.annotateTransaction
+    var metadata = {foo: 'bar'}
+    function annotateTransactionNock () {
+      nock(apiHost)
+        .patch(url + transaction_id, {'metadata[foo]': 'bar'})
+        .matchHeader('Authorization', 'Bearer ' + access_token)
+        .reply(200, 'success')
+    }
+    beforeEach(function () {
+      annotateTransactionNock()
+    })
+    it('should send correct annotateTransaction request', function (done) {
+      mondo.annotateTransaction(transaction_id, metadata, access_token).then(testSuccess(done))
+    })
+    it('should send correct annotateTransaction request when using callback', function (done) {
+      mondo.annotateTransaction(transaction_id, metadata, access_token, testSuccess(done))
+    })
+    it('should send correct annotateTransaction request when sent as object', function (done) {
+      mondo.annotateTransaction(_.extend({transaction_id: transaction_id}, metadata), access_token, testSuccess(done))
+    })
+    it('should send correct annotateTransaction request when sent as nested object', function (done) {
+      mondo.annotateTransaction({
+        transaction_id: transaction_id,
+        metadata: metadata
       }, access_token, testSuccess(done))
     })
   })
