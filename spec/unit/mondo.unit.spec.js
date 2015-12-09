@@ -16,9 +16,26 @@ var credentials = {
   username: 'valid',
   password: 'valid'
 }
-
 var access_token = 'valid'
 var refresh_token = 'valid'
+var account_id = 'valid'
+var transaction_id = 'valid'
+
+function knocker (options) {
+  options = options || {}
+  var knock = nock(apiHost)
+  if (options.form) {
+    options.method = 'form'
+  }
+  knock = knock[(options.method || 'get')](options.url, options.form)
+  if (options.query) {
+    knock = knock.query(options.query)
+  }
+  if (options.auth !== false) {
+    knock = knock.matchHeader('Authorization', 'Bearer ' + access_token)
+  }
+  knock.reply(options.code || 200, options.code ? 'error' : 'success')
+}
 
 describe('Mondo unit tests', function () {
   function testSuccess (done) {
@@ -110,12 +127,17 @@ describe('Mondo unit tests', function () {
         client_secret: credentials.client_secret
       }
       function refreshTokenNock () {
+        // var url = methodPaths.refreshToken
+        // knocker({
+        //  url: url,
+        //  form: successCreds
+        // })
         nock(apiHost)
           .post(methodPaths.refreshToken, successCreds)
           .reply(200, 'success')
         nock(apiHost)
           .post(methodPaths.refreshToken)
-          .reply(401, 'error')
+          .reply(400, 'error')
       }
       beforeEach(function () {
         refreshTokenNock()
@@ -138,4 +160,152 @@ describe('Mondo unit tests', function () {
       })
     })
   })
+
+  describe('Accounts', function () {
+    function accountsNock () {
+      knocker({ url: methodPaths.accounts })
+    }
+    beforeEach(function () {
+      accountsNock()
+    })
+    it('should send correct accounts request', function (done) {
+      mondo.accounts(access_token).then(testSuccess(done))
+    })
+    it('should send correct accounts request when using callback', function (done) {
+      mondo.accounts(access_token, testSuccess(done))
+    })
+  })
+
+  describe('Balance', function () {
+    function balanceNock () {
+      var url = methodPaths.balance
+      knocker({
+        url: url,
+        query: { account_id: account_id }
+      })
+      knocker({
+        code: 403,
+        url: url,
+        query: { account_id: 'invalid_account' }
+      })
+    }
+    beforeEach(function () {
+      balanceNock()
+    })
+    it('should send correct balance request', function (done) {
+      mondo.balance(account_id, access_token).then(testSuccess(done))
+    })
+    it('should send correct balance request when using callback', function (done) {
+      mondo.balance(account_id, access_token, testSuccess(done))
+    })
+    it('should send handle balance request failure', function (done) {
+      mondo.balance('invalid_account', access_token).catch(testError(done))
+    })
+    it('should send handle balance request failure when using callback', function (done) {
+      mondo.balance('invalid_account', access_token, testError(done))
+    })
+  })
+
+  describe('Transactions', function () {
+    var url = methodPaths.transactions
+    function transactionsNock () {
+      function transKnocker (query) {
+        query = _.extend({}, { account_id: account_id }, query)
+        knocker({
+          url: url,
+          query: query
+        })
+      }
+      transKnocker()
+      transKnocker({ limit: 10 })
+      transKnocker({ since: /\d\d\d\d-\d\d-\d\dT\d\d/ })
+      transKnocker({ before: /\d\d\d\d-\d\d-\d\dT\d\d/ })
+    }
+
+    beforeEach(function () {
+      transactionsNock()
+    })
+    it('should send correct balance request', function (done) {
+      mondo.transactions(account_id, access_token).then(testSuccess(done))
+    })
+    it('should send correct balance request when using callback', function (done) {
+      mondo.transactions(account_id, access_token, testSuccess(done))
+    })
+    it('should send correct balance request with limit', function (done) {
+      mondo.transactions({
+        account_id: account_id,
+        limit: 10
+      }, access_token).then(testSuccess(done))
+    })
+    it('should send correct balance request with ISO date string', function (done) {
+      mondo.transactions({
+        account_id: account_id,
+        since: '2015-11-10T23:00:00Z'
+      }, access_token).then(testSuccess(done))
+    })
+    // pending until cli-style implemented
+    xit('should send correct balance request with period', function (done) {
+      mondo.transactions({
+        account_id: account_id,
+        since: '7d'
+      }, access_token).then(testSuccess(done))
+    })
+    // pending until cli-style implemented
+    it('should send correct balance request with date object', function (done) {
+      mondo.transactions({
+        account_id: account_id,
+        before: new Date()
+      }, access_token).then(testSuccess(done))
+    })
+  })
+
+  describe('Transaction', function () {
+    var url = methodPaths.transaction + transaction_id
+    function transactionNock () {
+      knocker({ url: url })
+      knocker({
+        url: url,
+        query: { 'expand[]': 'merchant' }
+      })
+      knocker({
+        code: 403,
+        url: url,
+        query: { account_id: 'invalid_account' }
+      })
+    }
+    beforeEach(function () {
+      transactionNock()
+    })
+    it('should send correct transaction request', function (done) {
+      mondo.transaction(transaction_id, access_token).then(testSuccess(done))
+    })
+    it('should send correct transaction request when using callback', function (done) {
+      mondo.transaction(transaction_id, access_token, testSuccess(done))
+    })
+    it('should send correct transaction request when sent as object', function (done) {
+      mondo.transaction({
+        transaction_id: transaction_id
+      }, access_token, testSuccess(done))
+    })
+    it('should send correct transaction request when expand param passed', function (done) {
+      mondo.transaction({
+        transaction_id: transaction_id,
+        expand: 'merchant'
+      }, access_token, testSuccess(done))
+    })
+  })
 })
+
+/*
+annotateTransaction
+
+createFeedItem
+
+webhooks
+registerWebhook
+deleteWebhook
+
+uploadAttachment
+registerAttachment
+deregisterAttachment
+*/
