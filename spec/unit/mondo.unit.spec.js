@@ -317,14 +317,49 @@ describe('Mondo unit tests', function () {
         metadata: metadata
       }, access_token, testSuccess(done))
     })
+    it('should send correct annotateTransaction request when metadata aliased as annotation', function (done) {
+      mondo.annotateTransaction({
+        transaction_id: transaction_id,
+        annotation: metadata
+      }, access_token, testSuccess(done))
+    })
+  })
+
+  describe('Create feed item', function () {
+    var url = methodPaths.createFeedItem
+    var params = {
+      account_id: account_id,
+      url: 'http://foo.com',
+      params: {
+        title: 'foo',
+        image_url: 'http://foo.com/icon.gif'
+      }
+    }
+    function createFeedItemNock () {
+      nock(apiHost)
+        .post(url, {
+          account_id: account_id,
+          url: 'http://foo.com',
+          type: 'basic',
+          'params[title]': 'foo',
+          'params[image_url]': 'http://foo.com/icon.gif'
+        })
+        .matchHeader('Authorization', 'Bearer ' + access_token)
+        .reply(200, 'success')
+    }
+    beforeEach(function () {
+      createFeedItemNock()
+    })
+    it('should send correct createFeedItem request', function (done) {
+      mondo.createFeedItem(params, access_token).then(testSuccess(done))
+    })
+    it('should send correct createFeedItem request when using callback', function (done) {
+      mondo.createFeedItem(params, access_token, testSuccess(done))
+    })
   })
 })
 
 /*
-annotateTransaction
-
-createFeedItem
-
 webhooks
 registerWebhook
 deleteWebhook
