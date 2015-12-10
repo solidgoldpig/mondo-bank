@@ -357,6 +357,26 @@ describe('Mondo unit tests', function () {
       mondo.createFeedItem(params, access_token, testSuccess(done))
     })
   })
+
+  describe('Webhooks', function () {
+    function webhooksNock () {
+      var url = methodPaths.webhooks
+      knocker({
+        url: url,
+        query: { account_id: account_id }
+      })
+    }
+    beforeEach(function () {
+      webhooksNock()
+    })
+    it('should send correct webhooks request', function (done) {
+      mondo.webhooks(account_id, access_token).then(testSuccess(done))
+    })
+    it('should send correct webhooks request when using callback', function (done) {
+      mondo.webhooks(account_id, access_token, testSuccess(done))
+    })
+  })
+
 })
 
 /*
