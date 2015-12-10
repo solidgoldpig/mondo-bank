@@ -377,10 +377,32 @@ describe('Mondo unit tests', function () {
     })
   })
 
+  describe('Register webhook', function () {
+    var url = methodPaths.registerWebhook
+    var webhookUrl = 'http://foo.com'
+    function registerWebhookNock () {
+      nock(apiHost)
+        .post(url, {
+          account_id: account_id,
+          url: webhookUrl
+        })
+        .matchHeader('Authorization', 'Bearer ' + access_token)
+        .reply(200, 'success')
+    }
+    beforeEach(function () {
+      registerWebhookNock()
+    })
+    it('should send correct registerWebhook request', function (done) {
+      mondo.registerWebhook(account_id, webhookUrl, access_token).then(testSuccess(done))
+    })
+    it('should send correct registerWebhook request when using callback', function (done) {
+      mondo.registerWebhook(account_id, webhookUrl, access_token, testSuccess(done))
+    })
+  })
+
 })
 
 /*
-webhooks
 registerWebhook
 deleteWebhook
 
