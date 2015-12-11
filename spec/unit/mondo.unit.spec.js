@@ -466,9 +466,45 @@ describe('Mondo unit tests', function () {
     })
   })
 
+  describe('Upload attachment', function () {
+    var url = methodPaths.uploadAttachment
+    var file_name = 'bar.png'
+    var file_type = 'png'
+    var params = {
+      file_name: file_name,
+      file_type: file_type
+    }
+    function uploadAttachmentNock () {
+      knocker({
+        url: url,
+        form: params
+      })
+    }
+    beforeEach(function () {
+      uploadAttachmentNock()
+    })
+    it('should send correct uploadAttachment request', function (done) {
+      mondo.uploadAttachment(params, access_token).then(testSuccess(done))
+    })
+    it('should send correct uploadAttachment request when using callback', function (done) {
+      mondo.uploadAttachment(params, access_token, testSuccess(done))
+    })
+    it('should send correct uploadAttachment request when params aliases used', function (done) {
+      mondo.uploadAttachment({
+        file_name: file_name,
+        type: file_type
+      }, access_token, testSuccess(done))
+    })
+    it('should send correct uploadAttachment request when other params aliases used', function (done) {
+      mondo.uploadAttachment({
+        name: file_name,
+        file_type: file_type
+      }, access_token, testSuccess(done))
+    })
+  })
+
 })
 
 /*
-uploadAttachment
 deregisterAttachment
 */
