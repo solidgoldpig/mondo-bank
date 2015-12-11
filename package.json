@@ -1,6 +1,6 @@
 {
   "name": "mondo-bank",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Node wrapper for Mondo API",
   "main": "lib/mondo.js",
   "scripts": {
@@ -11,6 +11,9 @@
     "bumptag": "babel-node dev/bumptag.js",
     "docs": "babel-node dev/generatedocs.js"
   },
+  "bin": {
+    "mondo": "bin/mondo-cli.js"
+  },
   "keywords": [
     "mondo",
     "banking",
@@ -18,7 +21,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/solidgoldpig/mondo-bank.git#0.1.3"
+    "url": "git://github.com/solidgoldpig/mondo-bank.git#0.1.4"
+  },
+  "bugs": {
+    "url": "https://github.com/solidgoldpig/mondo-bank/issues"
   },
   "dependencies": {
     "lodash": "^3.10.1",
@@ -36,6 +42,8 @@
     "eslint-config-standard-jsdoc": "^0.1.2",
     "eslint-plugin-jsdoc": "^1.1.0",
     "eslint-plugin-standard": "^1.3.1",
+    "gulp": "^3.9.0",
+    "gulp-standard": "^5.2.2",
     "jasmine": "^2.4.1",
     "jsdoc": "^3.4.0",
     "lodash": "^3.10.1",
@@ -44,5 +52,11 @@
     "rimraf": "^2.4.4",
     "tmp": "0.0.28",
     "to-markdown": "^2.0.1"
+  },
+  "optionalDependencies": {
+    "mkdirp": "^0.5.1",
+    "moment": "^2.10.6",
+    "prompt": "^0.2.14",
+    "yargs": "^3.31.0"
   }
 }

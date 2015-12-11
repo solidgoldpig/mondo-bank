@@ -1,0 +1,20 @@
+{
+  "host": "https://production-api.gmon.io",
+  "resources": {
+    "token": "/oauth2/token",
+    "tokenInfo": "/ping/whoami",
+    "refreshToken": "/oauth2/token",
+    "accounts": "/accounts",
+    "balance": "/balance",
+    "transactions": "/transactions",
+    "transaction": "/transactions/",
+    "annotateTransaction": "/transactions/",
+    "createFeedItem": "/feed",
+    "webhooks": "/webhooks",
+    "registerWebhook": "/webhooks",
+    "deleteWebhook": "/webhooks/",
+    "uploadAttachment": "/attachment/upload",
+    "registerAttachment": "/attachment/register",
+    "deregisterAttachment": "/attachment/deregister"
+  }
+}

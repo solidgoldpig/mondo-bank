@@ -2,19 +2,27 @@
 
 Node wrapper for [Mondo](https://getmondo.co.uk/) API
 
-All current methods (as of 1 Dec 2015) implemented and can be used as promises or callback-style.
+All current methods (as of 11 Dec 2015) implemented and can be used as promises or callback-style.
 
 See https://getmondo.co.uk/docs
 
 
 ## Version
 
-0.1.3
+0.1.4
 
 
 ## Installation
 
     npm install mondo-bank
+
+Install globally, along with bundled command line tool
+
+    npm install -g mondo-bank
+
+If you do not wish to install the provided command line tool, you can skip the optional dependencies
+
+    npm install -g mondo-bank --no-bin-links --no-optional 
 
 
 ## Usage
@@ -78,6 +86,19 @@ Get balance details for an account
 
     balancePromise = mondo.balance(account_id, access_token)
 
+List transactions
+
+    transactionsPromise = mondo.transactions(account_id, access_token)
+
+or to filter the results
+
+    transactionsPromise = mondo.transactions({
+      account_id: account_id,
+      since: since,
+      before: before
+      limit: limit
+    }, access_token)
+
 Get details about a transaction
 
     transactionPromise = mondo.transaction(transaction_id, access_token)
@@ -102,20 +123,16 @@ or
       foo: 'bar'
     }, access_token)
 
-List transactions
+or
 
-    transactionsPromise = mondo.transactions(account_id, access_token)
-
-or to filter the results
-
-    transactionsPromise = mondo.transactions({
-      account_id: account_id,
-      since: since,
-      before: before
-      limit: limit
+    annotateTransactionPromise = mondo.annotateTransaction({
+      transaction_id: transaction_id,
+      metadata: {
+       foo: 'bar'
+      }
     }, access_token)
 
-Publish a new feed entry "params[background_color]=#FCF1EE" \ "params[body_color]=#FCF1EE" \ "params[title_color]=#333" \ "params[body]=Some body text to display"
+Publish a new feed entry
 
     createFeedItemPromise = mondo.createFeedItem({
       account_id: accountId,
@@ -167,10 +184,34 @@ Deregister attachment
 This generates documentation with jsdoc in the docs directory (ignored by git) and also updates the README.md file.
 
 
-## Known issues
+## Command line tool
 
-- No tests
+If `mondo-bank` was installed with the global `-g` flag, the command `mondo` will be available.
 
+Otherwise, ensure that `bin/mondo-cli.js` is in your path.
+
+
+### CLI usage
+
+Please refer to the built-in documentation
+
+    mondo --help
+
+
+### CLI config files
+
+By default, the `mondo` cli tool looks for the config files it needs to run in the current working directory.
+
+To override this, pass the config argument
+
+The config files located in the config directory are:
+
+- `credentials.json`
+  stores your developer and user details (generated if not found)
+- `tokens.json`
+  stores your app tokens
+- `defaults.json`
+  provides default values for method args
 
 ## Unlicense
 
