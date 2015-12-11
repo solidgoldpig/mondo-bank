@@ -12,7 +12,7 @@
     "createFeedItem": "/feed",
     "webhooks": "/webhooks",
     "registerWebhook": "/webhooks",
-    "deleteWebhook": "deleteWebhook",
+    "deleteWebhook": "/webhooks/",
     "uploadAttachment": "/attachment/upload",
     "registerAttachment": "/attachment/register",
     "deregisterAttachment": "/attachment/deregister"

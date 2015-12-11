@@ -22,10 +22,9 @@ var account_id = 'valid'
 var transaction_id = 'valid'
 
 function knocker (options) {
-  options = options || {}
   var knock = nock(apiHost)
-  if (options.form) {
-    options.method = 'form'
+  if (options.form && !options.method) {
+    options.method = 'post'
   }
   knock = knock[(options.method || 'get')](options.url, options.form)
   if (options.query) {
@@ -63,17 +62,25 @@ describe('Mondo unit tests', function () {
     describe('Get a token', function () {
       function tokenNock () {
         var successCreds = _.extend({grant_type: 'password'}, credentials)
-        nock(apiHost)
-          .post(methodPaths.token, successCreds)
-          .reply(200, 'success')
+        knocker({
+          url: methodPaths.token,
+          form: successCreds,
+          auth: false
+        })
         var invalidRequestCreds = _.extend({}, successCreds, { username: 'invalid' })
-        nock(apiHost)
-          .post(methodPaths.token, invalidRequestCreds)
-          .reply(400, 'error')
+        knocker({
+          url: methodPaths.token,
+          form: invalidRequestCreds,
+          auth: false,
+          code: 400
+        })
         var invalidClientCreds = _.extend({}, successCreds, {client_id: 'invalid'})
-        nock(apiHost)
-          .post(methodPaths.token, invalidClientCreds)
-          .reply(401, 'error')
+        knocker({
+          url: methodPaths.token,
+          form: invalidClientCreds,
+          auth: false,
+          code: 401
+        })
       }
       beforeEach(function () {
         tokenNock()
@@ -94,13 +101,14 @@ describe('Mondo unit tests', function () {
 
     describe('Get information about an access token', function () {
       function tokenInfoNock () {
-        nock(apiHost)
-          .get(methodPaths.tokenInfo)
-          .matchHeader('Authorization', 'Bearer ' + access_token)
-          .reply(200, 'success')
-        nock(apiHost)
-          .get(methodPaths.tokenInfo)
-          .reply(401, 'error')
+        knocker({
+          url: methodPaths.tokenInfo
+        })
+        knocker({
+          url: methodPaths.tokenInfo,
+          auth: false,
+          code: 401
+        })
       }
       beforeEach(function () {
         tokenInfoNock()
@@ -127,12 +135,17 @@ describe('Mondo unit tests', function () {
         client_secret: credentials.client_secret
       }
       function refreshTokenNock () {
-        nock(apiHost)
-          .post(methodPaths.refreshToken, successCreds)
-          .reply(200, 'success')
-        nock(apiHost)
-          .post(methodPaths.refreshToken)
-          .reply(400, 'error')
+        knocker({
+          url: methodPaths.refreshToken,
+          form: successCreds,
+          auth: false
+        })
+        knocker({
+          url: methodPaths.refreshToken,
+          method: 'post',
+          auth: false,
+          code: 400
+        })
       }
       beforeEach(function () {
         refreshTokenNock()
@@ -245,7 +258,6 @@ describe('Mondo unit tests', function () {
         since: '7d'
       }, access_token).then(testSuccess(done))
     })
-    // pending until cli-style implemented
     it('should send correct balance request with date object', function (done) {
       mondo.transactions({
         account_id: account_id,
@@ -294,10 +306,11 @@ describe('Mondo unit tests', function () {
     var url = methodPaths.annotateTransaction
     var metadata = {foo: 'bar'}
     function annotateTransactionNock () {
-      nock(apiHost)
-        .patch(url + transaction_id, {'metadata[foo]': 'bar'})
-        .matchHeader('Authorization', 'Bearer ' + access_token)
-        .reply(200, 'success')
+      knocker({
+        method: 'patch',
+        url: url + transaction_id,
+        form: {'metadata[foo]': 'bar'}
+      })
     }
     beforeEach(function () {
       annotateTransactionNock()
@@ -336,16 +349,16 @@ describe('Mondo unit tests', function () {
       }
     }
     function createFeedItemNock () {
-      nock(apiHost)
-        .post(url, {
+      knocker({
+        url: url,
+        form: {
           account_id: account_id,
           url: 'http://foo.com',
           type: 'basic',
           'params[title]': 'foo',
           'params[image_url]': 'http://foo.com/icon.gif'
-        })
-        .matchHeader('Authorization', 'Bearer ' + access_token)
-        .reply(200, 'success')
+        }
+      })
     }
     beforeEach(function () {
       createFeedItemNock()
@@ -381,13 +394,13 @@ describe('Mondo unit tests', function () {
     var url = methodPaths.registerWebhook
     var webhookUrl = 'http://foo.com'
     function registerWebhookNock () {
-      nock(apiHost)
-        .post(url, {
+      knocker({
+        url: url,
+        form: {
           account_id: account_id,
           url: webhookUrl
-        })
-        .matchHeader('Authorization', 'Bearer ' + access_token)
-        .reply(200, 'success')
+        }
+      })
     }
     beforeEach(function () {
       registerWebhookNock()
@@ -397,6 +410,26 @@ describe('Mondo unit tests', function () {
     })
     it('should send correct registerWebhook request when using callback', function (done) {
       mondo.registerWebhook(account_id, webhookUrl, access_token, testSuccess(done))
+    })
+  })
+
+  describe('Delete webhook', function () {
+    var webhook_id = 'webhook_id'
+    var url = methodPaths.deleteWebhook + webhook_id
+    function deleteWebhookNock () {
+      knocker({
+        method: 'delete',
+        url: url
+      })
+    }
+    beforeEach(function () {
+      deleteWebhookNock()
+    })
+    it('should send correct deleteWebhook request', function (done) {
+      mondo.deleteWebhook(webhook_id, access_token).then(testSuccess(done))
+    })
+    it('should send correct deleteWebhook request when using callback', function (done) {
+      mondo.deleteWebhook(webhook_id, access_token, testSuccess(done))
     })
   })
 
