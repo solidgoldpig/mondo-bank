@@ -11,6 +11,9 @@
     "bumptag": "babel-node dev/bumptag.js",
     "docs": "babel-node dev/generatedocs.js"
   },
+  "bin": {
+    "mondo": "bin/mondo-cli.js"
+  },
   "keywords": [
     "mondo",
     "banking",
@@ -18,7 +21,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/solidgoldpig/mondo-bank.git#0.1.3"
+    "url": "git://github.com/solidgoldpig/mondo-bank.git#0.1.4-branch"
+  },
+  "bugs": {
+    "url": "https://github.com/solidgoldpig/mondo-bank/issues"
   },
   "dependencies": {
     "lodash": "^3.10.1",
@@ -46,5 +52,11 @@
     "rimraf": "^2.4.4",
     "tmp": "0.0.28",
     "to-markdown": "^2.0.1"
+  },
+  "optionalDependencies": {
+    "mkdirp": "^0.5.1",
+    "moment": "^2.10.6",
+    "prompt": "^0.2.14",
+    "yargs": "^3.31.0"
   }
 }

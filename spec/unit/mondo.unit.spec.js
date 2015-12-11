@@ -251,13 +251,6 @@ describe('Mondo unit tests', function () {
         since: '2015-11-10T23:00:00Z'
       }, access_token).then(testSuccess(done))
     })
-    // pending until cli-style implemented
-    xit('should send correct balance request with period', function (done) {
-      mondo.transactions({
-        account_id: account_id,
-        since: '7d'
-      }, access_token).then(testSuccess(done))
-    })
     it('should send correct balance request with date object', function (done) {
       mondo.transactions({
         account_id: account_id,
