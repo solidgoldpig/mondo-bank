@@ -524,7 +524,3 @@ describe('Mondo unit tests', function () {
   })
 
 })
-
-/*
-deregisterAttachment
-*/
