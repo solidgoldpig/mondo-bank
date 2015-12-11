@@ -433,13 +433,42 @@ describe('Mondo unit tests', function () {
     })
   })
 
+  describe('Register attachment', function () {
+    var url = methodPaths.registerAttachment
+    var file_url = 'http://foo.com/bar.gif'
+    var file_type = 'gif'
+    var params = {
+      external_id: transaction_id,
+      file_url: file_url,
+      file_type: file_type
+    }
+    function registerAttachmentNock () {
+      knocker({
+        url: url,
+        form: params
+      })
+    }
+    beforeEach(function () {
+      registerAttachmentNock()
+    })
+    it('should send correct registerAttachment request', function (done) {
+      mondo.registerAttachment(params, access_token).then(testSuccess(done))
+    })
+    it('should send correct registerAttachment request when using callback', function (done) {
+      mondo.registerAttachment(params, access_token, testSuccess(done))
+    })
+    it('should send correct registerAttachment request when params aliases used', function (done) {
+      mondo.registerAttachment({
+        transaction_id: transaction_id,
+        url: file_url,
+        type: file_type
+      }, access_token, testSuccess(done))
+    })
+  })
+
 })
 
 /*
-registerWebhook
-deleteWebhook
-
 uploadAttachment
-registerAttachment
 deregisterAttachment
 */
