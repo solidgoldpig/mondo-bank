@@ -503,6 +503,26 @@ describe('Mondo unit tests', function () {
     })
   })
 
+  describe('Deregister attachment', function () {
+    var url = methodPaths.deregisterAttachment
+    var attachment_id = 'attachment_id'
+    function deregisterAttachmentNock () {
+      knocker({
+        url: url,
+        form: { id: attachment_id}
+      })
+    }
+    beforeEach(function () {
+      deregisterAttachmentNock()
+    })
+    it('should send correct deregisterAttachment request', function (done) {
+      mondo.deregisterAttachment(attachment_id, access_token).then(testSuccess(done))
+    })
+    it('should send correct deregisterAttachment request when using callback', function (done) {
+      mondo.deregisterAttachment(attachment_id, access_token, testSuccess(done))
+    })
+  })
+
 })
 
 /*
