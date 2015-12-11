@@ -9,7 +9,7 @@ See https://getmondo.co.uk/docs
 
 ## Version
 
-0.1.4-branch
+0.1.4
 
 
 ## Installation
