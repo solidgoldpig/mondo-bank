@@ -1,3 +1,5 @@
 .vscode
+.coverage/
+coverage/
 .mondo-cli-config
-docs
+docs/
