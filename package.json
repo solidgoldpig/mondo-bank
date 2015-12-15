@@ -48,7 +48,6 @@
     "istanbul": "^0.4.1",
     "jasmine": "^2.4.1",
     "jsdoc": "^3.4.0",
-    "lodash": "^3.10.1",
     "nock": "^3.3.2",
     "requizzle": "^0.2.1",
     "rimraf": "^2.4.4",
