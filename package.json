@@ -1,6 +1,6 @@
 {
   "name": "mondo-bank",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Node wrapper for Mondo API",
   "main": "lib/mondo.js",
   "scripts": {
@@ -22,17 +22,17 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/solidgoldpig/mondo-bank.git#0.1.5"
+    "url": "git://github.com/solidgoldpig/mondo-bank.git#0.1.6"
   },
   "bugs": {
     "url": "https://github.com/solidgoldpig/mondo-bank/issues"
   },
+  "author": "Alex Robinson <code@alex.solidgoldpig.com> (http://code.solidgoldpig.com/)",
+  "license": "Unlicense",
   "dependencies": {
     "lodash": "^3.10.1",
     "request": "^2.67.0"
   },
-  "author": "Alex Robinson <code@alex.solidgoldpig.com> (http://code.solidgoldpig.com/)",
-  "license": "Unlicense",
   "devDependencies": {
     "babel": "^6.3.13",
     "babel-cli": "^6.3.13",
@@ -48,7 +48,6 @@
     "istanbul": "^0.4.1",
     "jasmine": "^2.4.1",
     "jsdoc": "^3.4.0",
-    "lodash": "^3.10.1",
     "nock": "^3.3.2",
     "requizzle": "^0.2.1",
     "rimraf": "^2.4.4",
