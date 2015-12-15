@@ -33,7 +33,7 @@ function knocker (options) {
   if (options.auth !== false) {
     knock = knock.matchHeader('Authorization', 'Bearer ' + access_token)
   }
-  knock.reply(options.code || 200, options.code ? 'error' : 'success')
+  knock.reply(options.code || 200, options.code ? '{"err":"error"}' : '{"value":"success"}')
 }
 
 describe('Mondo unit tests', function () {
@@ -43,13 +43,19 @@ describe('Mondo unit tests', function () {
         // response is second arg if callback
         response = arguments[1]
       }
-      expect(response).toBe('success')
+      expect(response).toEqual({value: 'success'})
       done()
     }
   }
-  function testError (done) {
+  function testResponseError (done) {
     return function (err) {
-      expect(err.error).toBe('error')
+      expect(err.error).toEqual({err: 'error'})
+      done()
+    }
+  }
+  function testRequestError (done) {
+    return function (err) {
+      expect(err).toMatch(/No match for request/)
       done()
     }
   }
@@ -91,11 +97,14 @@ describe('Mondo unit tests', function () {
       it('should send correct token request when using callback', function (done) {
         mondo.token(credentials, testSuccess(done))
       })
-      it('should send handle token request failure', function (done) {
-        mondo.token(_.extend({}, credentials, { username: 'invalid' })).catch(testError(done))
+      it('should send handle token response failure', function (done) {
+        mondo.token(_.extend({}, credentials, { username: 'invalid' })).catch(testResponseError(done))
       })
-      it('should send handle token request failure when using callback', function (done) {
-        mondo.token(_.extend({}, credentials, { client_id: 'invalid' }), testError(done))
+      it('should send handle token response failure when using callback', function (done) {
+        mondo.token(_.extend({}, credentials, { client_id: 'invalid' }), testResponseError(done))
+      })
+      it('should send handle request failure', function (done) {
+        mondo.token({ unhandled: 'invalid' }).catch(testRequestError(done))
       })
     })
 
@@ -120,10 +129,10 @@ describe('Mondo unit tests', function () {
         mondo.tokenInfo(access_token, testSuccess(done))
       })
       it('should send handle tokenInfo request failure', function (done) {
-        mondo.tokenInfo('invalid_token').catch(testError(done))
+        mondo.tokenInfo('invalid_token').catch(testResponseError(done))
       })
       it('should send handle tokenInfo request failure when using callback', function (done) {
-        mondo.tokenInfo('invalid_token', testError(done))
+        mondo.tokenInfo('invalid_token', testResponseError(done))
       })
     })
 
@@ -161,10 +170,10 @@ describe('Mondo unit tests', function () {
         mondo.refreshToken(refresh_token, testSuccess(done))
       })
       it('should send handle tokenInfo request failure', function (done) {
-        mondo.refreshToken('invalid_token').catch(testError(done))
+        mondo.refreshToken('invalid_token').catch(testResponseError(done))
       })
       it('should send handle tokenInfo request failure when using callback', function (done) {
-        mondo.refreshToken('invalid_token', testError(done))
+        mondo.refreshToken('invalid_token', testResponseError(done))
       })
     })
   })
@@ -207,10 +216,10 @@ describe('Mondo unit tests', function () {
       mondo.balance(account_id, access_token, testSuccess(done))
     })
     it('should send handle balance request failure', function (done) {
-      mondo.balance('invalid_account', access_token).catch(testError(done))
+      mondo.balance('invalid_account', access_token).catch(testResponseError(done))
     })
     it('should send handle balance request failure when using callback', function (done) {
-      mondo.balance('invalid_account', access_token, testError(done))
+      mondo.balance('invalid_account', access_token, testResponseError(done))
     })
   })
 
@@ -502,7 +511,9 @@ describe('Mondo unit tests', function () {
     function deregisterAttachmentNock () {
       knocker({
         url: url,
-        form: { id: attachment_id}
+        form: {
+          id: attachment_id
+        }
       })
     }
     beforeEach(function () {
@@ -515,5 +526,4 @@ describe('Mondo unit tests', function () {
       mondo.deregisterAttachment(attachment_id, access_token, testSuccess(done))
     })
   })
-
 })

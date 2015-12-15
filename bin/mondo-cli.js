@@ -170,7 +170,7 @@ if (argv.method === 'annotateTransaction') {
     }, accessTokenArg))
     .help('h')
     .example('$0 --annotateTransaction --annotation.foo bar --annotation.baz bim', 'Annotate transaction with keys foo and baz')
-    .example('$0 --annotateTransaction --annotation.foo \'\'', 'Remove annotation with key foo from transaction')
+    .example("$0 --annotateTransaction --annotation.foo ''", 'Remove annotation with key foo from transaction')
     .argv
 }
 if (argv.method === 'createFeedItem') {
@@ -200,7 +200,7 @@ if (argv.method === 'createFeedItem') {
       }
     }, accessTokenArg))
     .help('h')
-    .example('$0 --createFeedItem --params.title \'Hello world!\' --params.image_url https://robohash.org/104.236.21.134.png', 'Create feed item')
+    .example("$0 --createFeedItem --params.title 'Hello world!' --params.image_url https://robohash.org/104.236.21.134.png", 'Create feed item')
     .argv
 }
 if (argv.method === 'registerWebhook') {
@@ -299,7 +299,7 @@ var configPaths = {
   defaults: 'defaults.json'
 }
 var configDir = path.resolve(PWD, argv.config || '', '.mondo-cli-config')
-Object.keys(configPaths).forEach(function(cPath){
+Object.keys(configPaths).forEach(function (cPath) {
   configPaths[cPath] = path.resolve(configDir, configPaths[cPath])
 })
 
@@ -331,7 +331,7 @@ try {
     description: 'Client password >',
     type: 'string',
     required: true
-  }], function(err, results) {
+  }], function (err, results) {
     if (err) {
       process.exit()
     }
@@ -345,9 +345,7 @@ try {
   })
 }
 
-
 if (argv) {
-
   var defaults = {}
   try {
     defaults = require(configPaths.defaults)
@@ -362,41 +360,42 @@ if (argv) {
 
   function debug () {
     if (argv.debug) {
-        console.log.apply(null, arguments)
-      }
+      console.log.apply(null, arguments)
+    }
   }
 
-  function logGeneric (logType, methodType, output) {
+  function logGeneric (logType, methodType, output, fn) {
     var logArgs = [output]
     if (argv.debug) {
       logArgs.unshift(logType + '\n')
       logArgs.unshift(methodType)
-      
     }
     console.log.apply(null, logArgs)
+    if (fn) {
+      fn(res)
+    }
   }
 
   function logSuccess (methodType, fn) {
     return function (res) {
       var output = argv.length ? res[methodType].length : JSON.stringify(res, null, 2)
-      logGeneric('success', methodType, output)
-      if (fn) {
-        fn(res)
-      }
+      logGeneric('success', methodType, output, fn)
     }
   }
 
-  function logError (methodType) {
+  function logError (methodType, fn) {
     return function (err) {
       var errOutput = JSON.stringify(err, null, 2)
-      logGeneric('error', methodType, errOutput)
+      logGeneric('error', methodType, errOutput, fn)
     }
   }
 
   function runPromise (type, typePromise, fn) {
+    var lSuccess = logSuccess(type, fn)
+    var lError = logError(type, fn)
     typePromise
-      .then(logSuccess(type, fn))
-      .catch(logError(type))
+      .then(lSuccess)
+      .catch(lError)
   }
 
   function saveTokens (tokens) {
@@ -417,7 +416,7 @@ if (argv) {
     argList.forEach(function (arg) {
       argv[arg] = argv[arg] || argv[arg.replace(/.+_id$/, 'id')] || (defaults[method] ? defaults[method][arg] : defaults[arg])
       if (!argv[arg]) {
-        console.log('Please provide the', arg,  'arg')
+        console.log('Please provide the', arg, 'arg')
         process.exit(1)
       }
     })
@@ -471,14 +470,14 @@ if (argv) {
           args.since = argv.since || defaultTrans.since
           function toISO (arg) {
             if (args[arg]) {
-              args[arg].replace(/(\d+)\s*(\w+)/, function(m, m1, m2){
+              args[arg].replace(/(\d+)\s*(\w+)/, function (m, m1, m2) {
                 args[arg] = moment().subtract(m1, m2)
               })
               args[arg] = moment(args[arg]).toISOString()
             }
           }
-          toISO('since');
-          toISO('before');
+          toISO('since')
+          toISO('before')
           runPromise('transactions', mondo.transactions(args, access_token))
         }
 
@@ -558,6 +557,8 @@ if (argv) {
           runPromise('deregisterAttachment', mondo.deregisterAttachment(argv.attachment_id, access_token))
         }
       })
+        .catch(logError('transactions'))
     })
+      .catch(logError('accounts'))
   }
 }
