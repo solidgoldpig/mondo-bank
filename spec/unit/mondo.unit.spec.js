@@ -64,466 +64,475 @@ describe('Mondo unit tests', function () {
     nock.cleanAll()
   })
 
-  describe('Authenticating', function () {
-    describe('Get a token', function () {
-      function tokenNock () {
-        var successCreds = _.extend({grant_type: 'password'}, credentials)
-        knocker({
-          url: methodPaths.token,
-          form: successCreds,
-          auth: false
-        })
-        var invalidRequestCreds = _.extend({}, successCreds, { username: 'invalid' })
-        knocker({
-          url: methodPaths.token,
-          form: invalidRequestCreds,
-          auth: false,
-          code: 400
-        })
-        var invalidClientCreds = _.extend({}, successCreds, {client_id: 'invalid'})
-        knocker({
-          url: methodPaths.token,
-          form: invalidClientCreds,
-          auth: false,
-          code: 401
-        })
-      }
-      beforeEach(function () {
-        tokenNock()
-      })
-      it('should send correct token request', function (done) {
-        mondo.token(credentials).then(testSuccess(done))
-      })
-      it('should send correct token request when using callback', function (done) {
-        mondo.token(credentials, testSuccess(done))
-      })
-      it('should send handle token response failure', function (done) {
-        mondo.token(_.extend({}, credentials, { username: 'invalid' })).catch(testResponseError(done))
-      })
-      it('should send handle token response failure when using callback', function (done) {
-        mondo.token(_.extend({}, credentials, { client_id: 'invalid' }), testResponseError(done))
-      })
-      it('should send handle request failure', function (done) {
-        mondo.token({ unhandled: 'invalid' }).catch(testRequestError(done))
-      })
+  if (typeof Promise === 'undefined') {
+    console.log('Not running any tests')
+    it('should send correct token request when promises are not available', function (done) {
+      //mondo.token(credentials, testSuccess(done))
+      expect(true).toBe(true)
+      done()
     })
+  } else {
+    describe('Authenticating', function () {
+      describe('Get a token', function () {
+        function tokenNock () {
+          var successCreds = _.extend({grant_type: 'password'}, credentials)
+          knocker({
+            url: methodPaths.token,
+            form: successCreds,
+            auth: false
+          })
+          var invalidRequestCreds = _.extend({}, successCreds, { username: 'invalid' })
+          knocker({
+            url: methodPaths.token,
+            form: invalidRequestCreds,
+            auth: false,
+            code: 400
+          })
+          var invalidClientCreds = _.extend({}, successCreds, {client_id: 'invalid'})
+          knocker({
+            url: methodPaths.token,
+            form: invalidClientCreds,
+            auth: false,
+            code: 401
+          })
+        }
+        beforeEach(function () {
+          tokenNock()
+        })
+        it('should send correct token request', function (done) {
+          mondo.token(credentials).then(testSuccess(done))
+        })
+        it('should send correct token request when using callback', function (done) {
+          mondo.token(credentials, testSuccess(done))
+        })
+        it('should send handle token response failure', function (done) {
+          mondo.token(_.extend({}, credentials, { username: 'invalid' })).catch(testResponseError(done))
+        })
+        it('should send handle token response failure when using callback', function (done) {
+          mondo.token(_.extend({}, credentials, { client_id: 'invalid' }), testResponseError(done))
+        })
+        it('should send handle request failure', function (done) {
+          mondo.token({ unhandled: 'invalid' }).catch(testRequestError(done))
+        })
+      })
 
-    describe('Get information about an access token', function () {
-      function tokenInfoNock () {
-        knocker({
-          url: methodPaths.tokenInfo
+      describe('Get information about an access token', function () {
+        function tokenInfoNock () {
+          knocker({
+            url: methodPaths.tokenInfo
+          })
+          knocker({
+            url: methodPaths.tokenInfo,
+            auth: false,
+            code: 401
+          })
+        }
+        beforeEach(function () {
+          tokenInfoNock()
         })
-        knocker({
-          url: methodPaths.tokenInfo,
-          auth: false,
-          code: 401
+        it('should send correct tokenInfo request', function (done) {
+          mondo.tokenInfo(access_token).then(testSuccess(done))
         })
-      }
-      beforeEach(function () {
-        tokenInfoNock()
+        it('should send correct tokenInfo request when using callback', function (done) {
+          mondo.tokenInfo(access_token, testSuccess(done))
+        })
+        it('should send handle tokenInfo request failure', function (done) {
+          mondo.tokenInfo('invalid_token').catch(testResponseError(done))
+        })
+        it('should send handle tokenInfo request failure when using callback', function (done) {
+          mondo.tokenInfo('invalid_token', testResponseError(done))
+        })
       })
-      it('should send correct tokenInfo request', function (done) {
-        mondo.tokenInfo(access_token).then(testSuccess(done))
-      })
-      it('should send correct tokenInfo request when using callback', function (done) {
-        mondo.tokenInfo(access_token, testSuccess(done))
-      })
-      it('should send handle tokenInfo request failure', function (done) {
-        mondo.tokenInfo('invalid_token').catch(testResponseError(done))
-      })
-      it('should send handle tokenInfo request failure when using callback', function (done) {
-        mondo.tokenInfo('invalid_token', testResponseError(done))
-      })
-    })
 
-    describe('Refresh an access token', function () {
-      var successCreds = {
-        grant_type: 'refresh_token',
-        refresh_token: refresh_token,
-        client_id: credentials.client_id,
-        client_secret: credentials.client_secret
-      }
-      function refreshTokenNock () {
-        knocker({
-          url: methodPaths.refreshToken,
-          form: successCreds,
-          auth: false
-        })
-        knocker({
-          url: methodPaths.refreshToken,
-          method: 'post',
-          auth: false,
-          code: 400
-        })
-      }
-      beforeEach(function () {
-        refreshTokenNock()
-      })
-      it('should send correct refreshToken request', function (done) {
-        mondo.refreshToken({
+      describe('Refresh an access token', function () {
+        var successCreds = {
+          grant_type: 'refresh_token',
           refresh_token: refresh_token,
           client_id: credentials.client_id,
           client_secret: credentials.client_secret
-        }).then(testSuccess(done))
-      })
-      it('should send correct tokenInfo request when using callback', function (done) {
-        mondo.refreshToken(refresh_token, testSuccess(done))
-      })
-      it('should send handle tokenInfo request failure', function (done) {
-        mondo.refreshToken('invalid_token').catch(testResponseError(done))
-      })
-      it('should send handle tokenInfo request failure when using callback', function (done) {
-        mondo.refreshToken('invalid_token', testResponseError(done))
+        }
+        function refreshTokenNock () {
+          knocker({
+            url: methodPaths.refreshToken,
+            form: successCreds,
+            auth: false
+          })
+          knocker({
+            url: methodPaths.refreshToken,
+            method: 'post',
+            auth: false,
+            code: 400
+          })
+        }
+        beforeEach(function () {
+          refreshTokenNock()
+        })
+        it('should send correct refreshToken request', function (done) {
+          mondo.refreshToken({
+            refresh_token: refresh_token,
+            client_id: credentials.client_id,
+            client_secret: credentials.client_secret
+          }).then(testSuccess(done))
+        })
+        it('should send correct tokenInfo request when using callback', function (done) {
+          mondo.refreshToken(refresh_token, testSuccess(done))
+        })
+        it('should send handle tokenInfo request failure', function (done) {
+          mondo.refreshToken('invalid_token').catch(testResponseError(done))
+        })
+        it('should send handle tokenInfo request failure when using callback', function (done) {
+          mondo.refreshToken('invalid_token', testResponseError(done))
+        })
       })
     })
-  })
 
-  describe('Accounts', function () {
-    function accountsNock () {
-      knocker({ url: methodPaths.accounts })
-    }
-    beforeEach(function () {
-      accountsNock()
-    })
-    it('should send correct accounts request', function (done) {
-      mondo.accounts(access_token).then(testSuccess(done))
-    })
-    it('should send correct accounts request when using callback', function (done) {
-      mondo.accounts(access_token, testSuccess(done))
-    })
-  })
-
-  describe('Balance', function () {
-    function balanceNock () {
-      var url = methodPaths.balance
-      knocker({
-        url: url,
-        query: { account_id: account_id }
+    describe('Accounts', function () {
+      function accountsNock () {
+        knocker({ url: methodPaths.accounts })
+      }
+      beforeEach(function () {
+        accountsNock()
       })
-      knocker({
-        code: 403,
-        url: url,
-        query: { account_id: 'invalid_account' }
+      it('should send correct accounts request', function (done) {
+        mondo.accounts(access_token).then(testSuccess(done))
       })
-    }
-    beforeEach(function () {
-      balanceNock()
+      it('should send correct accounts request when using callback', function (done) {
+        mondo.accounts(access_token, testSuccess(done))
+      })
     })
-    it('should send correct balance request', function (done) {
-      mondo.balance(account_id, access_token).then(testSuccess(done))
-    })
-    it('should send correct balance request when using callback', function (done) {
-      mondo.balance(account_id, access_token, testSuccess(done))
-    })
-    it('should send handle balance request failure', function (done) {
-      mondo.balance('invalid_account', access_token).catch(testResponseError(done))
-    })
-    it('should send handle balance request failure when using callback', function (done) {
-      mondo.balance('invalid_account', access_token, testResponseError(done))
-    })
-  })
 
-  describe('Transactions', function () {
-    var url = methodPaths.transactions
-    function transactionsNock () {
-      function transKnocker (query) {
-        query = _.extend({}, { account_id: account_id }, query)
+    describe('Balance', function () {
+      function balanceNock () {
+        var url = methodPaths.balance
         knocker({
           url: url,
-          query: query
+          query: { account_id: account_id }
+        })
+        knocker({
+          code: 403,
+          url: url,
+          query: { account_id: 'invalid_account' }
         })
       }
-      transKnocker()
-      transKnocker({ limit: 10 })
-      transKnocker({ since: /\d\d\d\d-\d\d-\d\dT\d\d/ })
-      transKnocker({ before: /\d\d\d\d-\d\d-\d\dT\d\d/ })
-    }
-
-    beforeEach(function () {
-      transactionsNock()
-    })
-    it('should send correct balance request', function (done) {
-      mondo.transactions(account_id, access_token).then(testSuccess(done))
-    })
-    it('should send correct balance request when using callback', function (done) {
-      mondo.transactions(account_id, access_token, testSuccess(done))
-    })
-    it('should send correct balance request with limit', function (done) {
-      mondo.transactions({
-        account_id: account_id,
-        limit: 10
-      }, access_token).then(testSuccess(done))
-    })
-    it('should send correct balance request with ISO date string', function (done) {
-      mondo.transactions({
-        account_id: account_id,
-        since: '2015-11-10T23:00:00Z'
-      }, access_token).then(testSuccess(done))
-    })
-    it('should send correct balance request with date object', function (done) {
-      mondo.transactions({
-        account_id: account_id,
-        before: new Date()
-      }, access_token).then(testSuccess(done))
-    })
-  })
-
-  describe('Transaction', function () {
-    var url = methodPaths.transaction + transaction_id
-    function transactionNock () {
-      knocker({ url: url })
-      knocker({
-        url: url,
-        query: { 'expand[]': 'merchant' }
+      beforeEach(function () {
+        balanceNock()
       })
-      knocker({
-        code: 403,
-        url: url,
-        query: { account_id: 'invalid_account' }
+      it('should send correct balance request', function (done) {
+        mondo.balance(account_id, access_token).then(testSuccess(done))
       })
-    }
-    beforeEach(function () {
-      transactionNock()
-    })
-    it('should send correct transaction request', function (done) {
-      mondo.transaction(transaction_id, access_token).then(testSuccess(done))
-    })
-    it('should send correct transaction request when using callback', function (done) {
-      mondo.transaction(transaction_id, access_token, testSuccess(done))
-    })
-    it('should send correct transaction request when sent as object', function (done) {
-      mondo.transaction({
-        transaction_id: transaction_id
-      }, access_token, testSuccess(done))
-    })
-    it('should send correct transaction request when expand param passed', function (done) {
-      mondo.transaction({
-        transaction_id: transaction_id,
-        expand: 'merchant'
-      }, access_token, testSuccess(done))
-    })
-  })
-
-  describe('Annotating transaction', function () {
-    var url = methodPaths.annotateTransaction
-    var metadata = {foo: 'bar'}
-    function annotateTransactionNock () {
-      knocker({
-        method: 'patch',
-        url: url + transaction_id,
-        form: {'metadata[foo]': 'bar'}
+      it('should send correct balance request when using callback', function (done) {
+        mondo.balance(account_id, access_token, testSuccess(done))
       })
-    }
-    beforeEach(function () {
-      annotateTransactionNock()
+      it('should send handle balance request failure', function (done) {
+        mondo.balance('invalid_account', access_token).catch(testResponseError(done))
+      })
+      it('should send handle balance request failure when using callback', function (done) {
+        mondo.balance('invalid_account', access_token, testResponseError(done))
+      })
     })
-    it('should send correct annotateTransaction request', function (done) {
-      mondo.annotateTransaction(transaction_id, metadata, access_token).then(testSuccess(done))
-    })
-    it('should send correct annotateTransaction request when using callback', function (done) {
-      mondo.annotateTransaction(transaction_id, metadata, access_token, testSuccess(done))
-    })
-    it('should send correct annotateTransaction request when sent as object', function (done) {
-      mondo.annotateTransaction(_.extend({transaction_id: transaction_id}, metadata), access_token, testSuccess(done))
-    })
-    it('should send correct annotateTransaction request when sent as nested object', function (done) {
-      mondo.annotateTransaction({
-        transaction_id: transaction_id,
-        metadata: metadata
-      }, access_token, testSuccess(done))
-    })
-    it('should send correct annotateTransaction request when metadata aliased as annotation', function (done) {
-      mondo.annotateTransaction({
-        transaction_id: transaction_id,
-        annotation: metadata
-      }, access_token, testSuccess(done))
-    })
-  })
 
-  describe('Create feed item', function () {
-    var url = methodPaths.createFeedItem
-    var params = {
-      account_id: account_id,
-      url: 'http://foo.com',
-      params: {
-        title: 'foo',
-        image_url: 'http://foo.com/icon.gif'
+    describe('Transactions', function () {
+      var url = methodPaths.transactions
+      function transactionsNock () {
+        function transKnocker (query) {
+          query = _.extend({}, { account_id: account_id }, query)
+          knocker({
+            url: url,
+            query: query
+          })
+        }
+        transKnocker()
+        transKnocker({ limit: 10 })
+        transKnocker({ since: /\d\d\d\d-\d\d-\d\dT\d\d/ })
+        transKnocker({ before: /\d\d\d\d-\d\d-\d\dT\d\d/ })
       }
-    }
-    function createFeedItemNock () {
-      knocker({
-        url: url,
-        form: {
+
+      beforeEach(function () {
+        transactionsNock()
+      })
+      it('should send correct balance request', function (done) {
+        mondo.transactions(account_id, access_token).then(testSuccess(done))
+      })
+      it('should send correct balance request when using callback', function (done) {
+        mondo.transactions(account_id, access_token, testSuccess(done))
+      })
+      it('should send correct balance request with limit', function (done) {
+        mondo.transactions({
           account_id: account_id,
-          url: 'http://foo.com',
-          type: 'basic',
-          'params[title]': 'foo',
-          'params[image_url]': 'http://foo.com/icon.gif'
-        }
+          limit: 10
+        }, access_token).then(testSuccess(done))
       })
-    }
-    beforeEach(function () {
-      createFeedItemNock()
-    })
-    it('should send correct createFeedItem request', function (done) {
-      mondo.createFeedItem(params, access_token).then(testSuccess(done))
-    })
-    it('should send correct createFeedItem request when using callback', function (done) {
-      mondo.createFeedItem(params, access_token, testSuccess(done))
-    })
-  })
-
-  describe('Webhooks', function () {
-    function webhooksNock () {
-      var url = methodPaths.webhooks
-      knocker({
-        url: url,
-        query: { account_id: account_id }
-      })
-    }
-    beforeEach(function () {
-      webhooksNock()
-    })
-    it('should send correct webhooks request', function (done) {
-      mondo.webhooks(account_id, access_token).then(testSuccess(done))
-    })
-    it('should send correct webhooks request when using callback', function (done) {
-      mondo.webhooks(account_id, access_token, testSuccess(done))
-    })
-  })
-
-  describe('Register webhook', function () {
-    var url = methodPaths.registerWebhook
-    var webhookUrl = 'http://foo.com'
-    function registerWebhookNock () {
-      knocker({
-        url: url,
-        form: {
+      it('should send correct balance request with ISO date string', function (done) {
+        mondo.transactions({
           account_id: account_id,
-          url: webhookUrl
+          since: '2015-11-10T23:00:00Z'
+        }, access_token).then(testSuccess(done))
+      })
+      it('should send correct balance request with date object', function (done) {
+        mondo.transactions({
+          account_id: account_id,
+          before: new Date()
+        }, access_token).then(testSuccess(done))
+      })
+    })
+
+    describe('Transaction', function () {
+      var url = methodPaths.transaction + transaction_id
+      function transactionNock () {
+        knocker({ url: url })
+        knocker({
+          url: url,
+          query: { 'expand[]': 'merchant' }
+        })
+        knocker({
+          code: 403,
+          url: url,
+          query: { account_id: 'invalid_account' }
+        })
+      }
+      beforeEach(function () {
+        transactionNock()
+      })
+      it('should send correct transaction request', function (done) {
+        mondo.transaction(transaction_id, access_token).then(testSuccess(done))
+      })
+      it('should send correct transaction request when using callback', function (done) {
+        mondo.transaction(transaction_id, access_token, testSuccess(done))
+      })
+      it('should send correct transaction request when sent as object', function (done) {
+        mondo.transaction({
+          transaction_id: transaction_id
+        }, access_token, testSuccess(done))
+      })
+      it('should send correct transaction request when expand param passed', function (done) {
+        mondo.transaction({
+          transaction_id: transaction_id,
+          expand: 'merchant'
+        }, access_token, testSuccess(done))
+      })
+    })
+
+    describe('Annotating transaction', function () {
+      var url = methodPaths.annotateTransaction
+      var metadata = {foo: 'bar'}
+      function annotateTransactionNock () {
+        knocker({
+          method: 'patch',
+          url: url + transaction_id,
+          form: {'metadata[foo]': 'bar'}
+        })
+      }
+      beforeEach(function () {
+        annotateTransactionNock()
+      })
+      it('should send correct annotateTransaction request', function (done) {
+        mondo.annotateTransaction(transaction_id, metadata, access_token).then(testSuccess(done))
+      })
+      it('should send correct annotateTransaction request when using callback', function (done) {
+        mondo.annotateTransaction(transaction_id, metadata, access_token, testSuccess(done))
+      })
+      it('should send correct annotateTransaction request when sent as object', function (done) {
+        mondo.annotateTransaction(_.extend({transaction_id: transaction_id}, metadata), access_token, testSuccess(done))
+      })
+      it('should send correct annotateTransaction request when sent as nested object', function (done) {
+        mondo.annotateTransaction({
+          transaction_id: transaction_id,
+          metadata: metadata
+        }, access_token, testSuccess(done))
+      })
+      it('should send correct annotateTransaction request when metadata aliased as annotation', function (done) {
+        mondo.annotateTransaction({
+          transaction_id: transaction_id,
+          annotation: metadata
+        }, access_token, testSuccess(done))
+      })
+    })
+
+    describe('Create feed item', function () {
+      var url = methodPaths.createFeedItem
+      var params = {
+        account_id: account_id,
+        url: 'http://foo.com',
+        params: {
+          title: 'foo',
+          image_url: 'http://foo.com/icon.gif'
         }
+      }
+      function createFeedItemNock () {
+        knocker({
+          url: url,
+          form: {
+            account_id: account_id,
+            url: 'http://foo.com',
+            type: 'basic',
+            'params[title]': 'foo',
+            'params[image_url]': 'http://foo.com/icon.gif'
+          }
+        })
+      }
+      beforeEach(function () {
+        createFeedItemNock()
       })
-    }
-    beforeEach(function () {
-      registerWebhookNock()
+      it('should send correct createFeedItem request', function (done) {
+        mondo.createFeedItem(params, access_token).then(testSuccess(done))
+      })
+      it('should send correct createFeedItem request when using callback', function (done) {
+        mondo.createFeedItem(params, access_token, testSuccess(done))
+      })
     })
-    it('should send correct registerWebhook request', function (done) {
-      mondo.registerWebhook(account_id, webhookUrl, access_token).then(testSuccess(done))
-    })
-    it('should send correct registerWebhook request when using callback', function (done) {
-      mondo.registerWebhook(account_id, webhookUrl, access_token, testSuccess(done))
-    })
-  })
 
-  describe('Delete webhook', function () {
-    var webhook_id = 'webhook_id'
-    var url = methodPaths.deleteWebhook + webhook_id
-    function deleteWebhookNock () {
-      knocker({
-        method: 'delete',
-        url: url
+    describe('Webhooks', function () {
+      function webhooksNock () {
+        var url = methodPaths.webhooks
+        knocker({
+          url: url,
+          query: { account_id: account_id }
+        })
+      }
+      beforeEach(function () {
+        webhooksNock()
       })
-    }
-    beforeEach(function () {
-      deleteWebhookNock()
+      it('should send correct webhooks request', function (done) {
+        mondo.webhooks(account_id, access_token).then(testSuccess(done))
+      })
+      it('should send correct webhooks request when using callback', function (done) {
+        mondo.webhooks(account_id, access_token, testSuccess(done))
+      })
     })
-    it('should send correct deleteWebhook request', function (done) {
-      mondo.deleteWebhook(webhook_id, access_token).then(testSuccess(done))
-    })
-    it('should send correct deleteWebhook request when using callback', function (done) {
-      mondo.deleteWebhook(webhook_id, access_token, testSuccess(done))
-    })
-  })
 
-  describe('Register attachment', function () {
-    var url = methodPaths.registerAttachment
-    var file_url = 'http://foo.com/bar.gif'
-    var file_type = 'gif'
-    var params = {
-      external_id: transaction_id,
-      file_url: file_url,
-      file_type: file_type
-    }
-    function registerAttachmentNock () {
-      knocker({
-        url: url,
-        form: params
+    describe('Register webhook', function () {
+      var url = methodPaths.registerWebhook
+      var webhookUrl = 'http://foo.com'
+      function registerWebhookNock () {
+        knocker({
+          url: url,
+          form: {
+            account_id: account_id,
+            url: webhookUrl
+          }
+        })
+      }
+      beforeEach(function () {
+        registerWebhookNock()
       })
-    }
-    beforeEach(function () {
-      registerAttachmentNock()
+      it('should send correct registerWebhook request', function (done) {
+        mondo.registerWebhook(account_id, webhookUrl, access_token).then(testSuccess(done))
+      })
+      it('should send correct registerWebhook request when using callback', function (done) {
+        mondo.registerWebhook(account_id, webhookUrl, access_token, testSuccess(done))
+      })
     })
-    it('should send correct registerAttachment request', function (done) {
-      mondo.registerAttachment(params, access_token).then(testSuccess(done))
-    })
-    it('should send correct registerAttachment request when using callback', function (done) {
-      mondo.registerAttachment(params, access_token, testSuccess(done))
-    })
-    it('should send correct registerAttachment request when params aliases used', function (done) {
-      mondo.registerAttachment({
-        transaction_id: transaction_id,
-        url: file_url,
-        type: file_type
-      }, access_token, testSuccess(done))
-    })
-  })
 
-  describe('Upload attachment', function () {
-    var url = methodPaths.uploadAttachment
-    var file_name = 'bar.png'
-    var file_type = 'png'
-    var params = {
-      file_name: file_name,
-      file_type: file_type
-    }
-    function uploadAttachmentNock () {
-      knocker({
-        url: url,
-        form: params
+    describe('Delete webhook', function () {
+      var webhook_id = 'webhook_id'
+      var url = methodPaths.deleteWebhook + webhook_id
+      function deleteWebhookNock () {
+        knocker({
+          method: 'delete',
+          url: url
+        })
+      }
+      beforeEach(function () {
+        deleteWebhookNock()
       })
-    }
-    beforeEach(function () {
-      uploadAttachmentNock()
+      it('should send correct deleteWebhook request', function (done) {
+        mondo.deleteWebhook(webhook_id, access_token).then(testSuccess(done))
+      })
+      it('should send correct deleteWebhook request when using callback', function (done) {
+        mondo.deleteWebhook(webhook_id, access_token, testSuccess(done))
+      })
     })
-    it('should send correct uploadAttachment request', function (done) {
-      mondo.uploadAttachment(params, access_token).then(testSuccess(done))
-    })
-    it('should send correct uploadAttachment request when using callback', function (done) {
-      mondo.uploadAttachment(params, access_token, testSuccess(done))
-    })
-    it('should send correct uploadAttachment request when params aliases used', function (done) {
-      mondo.uploadAttachment({
-        file_name: file_name,
-        type: file_type
-      }, access_token, testSuccess(done))
-    })
-    it('should send correct uploadAttachment request when other params aliases used', function (done) {
-      mondo.uploadAttachment({
-        name: file_name,
+
+    describe('Register attachment', function () {
+      var url = methodPaths.registerAttachment
+      var file_url = 'http://foo.com/bar.gif'
+      var file_type = 'gif'
+      var params = {
+        external_id: transaction_id,
+        file_url: file_url,
         file_type: file_type
-      }, access_token, testSuccess(done))
-    })
-  })
-
-  describe('Deregister attachment', function () {
-    var url = methodPaths.deregisterAttachment
-    var attachment_id = 'attachment_id'
-    function deregisterAttachmentNock () {
-      knocker({
-        url: url,
-        form: {
-          id: attachment_id
-        }
+      }
+      function registerAttachmentNock () {
+        knocker({
+          url: url,
+          form: params
+        })
+      }
+      beforeEach(function () {
+        registerAttachmentNock()
       })
-    }
-    beforeEach(function () {
-      deregisterAttachmentNock()
+      it('should send correct registerAttachment request', function (done) {
+        mondo.registerAttachment(params, access_token).then(testSuccess(done))
+      })
+      it('should send correct registerAttachment request when using callback', function (done) {
+        mondo.registerAttachment(params, access_token, testSuccess(done))
+      })
+      it('should send correct registerAttachment request when params aliases used', function (done) {
+        mondo.registerAttachment({
+          transaction_id: transaction_id,
+          url: file_url,
+          type: file_type
+        }, access_token, testSuccess(done))
+      })
     })
-    it('should send correct deregisterAttachment request', function (done) {
-      mondo.deregisterAttachment(attachment_id, access_token).then(testSuccess(done))
+
+    describe('Upload attachment', function () {
+      var url = methodPaths.uploadAttachment
+      var file_name = 'bar.png'
+      var file_type = 'png'
+      var params = {
+        file_name: file_name,
+        file_type: file_type
+      }
+      function uploadAttachmentNock () {
+        knocker({
+          url: url,
+          form: params
+        })
+      }
+      beforeEach(function () {
+        uploadAttachmentNock()
+      })
+      it('should send correct uploadAttachment request', function (done) {
+        mondo.uploadAttachment(params, access_token).then(testSuccess(done))
+      })
+      it('should send correct uploadAttachment request when using callback', function (done) {
+        mondo.uploadAttachment(params, access_token, testSuccess(done))
+      })
+      it('should send correct uploadAttachment request when params aliases used', function (done) {
+        mondo.uploadAttachment({
+          file_name: file_name,
+          type: file_type
+        }, access_token, testSuccess(done))
+      })
+      it('should send correct uploadAttachment request when other params aliases used', function (done) {
+        mondo.uploadAttachment({
+          name: file_name,
+          file_type: file_type
+        }, access_token, testSuccess(done))
+      })
     })
-    it('should send correct deregisterAttachment request when using callback', function (done) {
-      mondo.deregisterAttachment(attachment_id, access_token, testSuccess(done))
+
+    describe('Deregister attachment', function () {
+      var url = methodPaths.deregisterAttachment
+      var attachment_id = 'attachment_id'
+      function deregisterAttachmentNock () {
+        knocker({
+          url: url,
+          form: {
+            id: attachment_id
+          }
+        })
+      }
+      beforeEach(function () {
+        deregisterAttachmentNock()
+      })
+      it('should send correct deregisterAttachment request', function (done) {
+        mondo.deregisterAttachment(attachment_id, access_token).then(testSuccess(done))
+      })
+      it('should send correct deregisterAttachment request when using callback', function (done) {
+        mondo.deregisterAttachment(attachment_id, access_token, testSuccess(done))
+      })
     })
-  })
+  }
 })
