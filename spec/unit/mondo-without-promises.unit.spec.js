@@ -1,65 +1,21 @@
 'use strict'
 
-var nock = require('nock')
+var mondo = require('../../lib/mondo')
 var _ = require('lodash')
 
-var mondo = require('../../lib/mondo')
+var nock = require('nock')
 
-var apiValues = require('../../lib/api.values.json')
+var mondoHelper = require('../helper/mondo-unit-spec-helper')
+var mH = mondoHelper
+var mondargs = mH.mondargs
+var methodPaths = mondargs.api.resources
 
-var apiHost = apiValues.host
-var methodPaths = apiValues.resources
-
-var credentials = {
-  client_id: 'valid',
-  client_secret: 'valid',
-  username: 'valid',
-  password: 'valid'
-}
-var access_token = 'valid'
-var refresh_token = 'valid'
-var account_id = 'valid'
-var transaction_id = 'valid'
-
-function knocker (options) {
-  var knock = nock(apiHost)
-  if (options.form && !options.method) {
-    options.method = 'post'
-  }
-  knock = knock[(options.method || 'get')](options.url, options.form)
-  if (options.query) {
-    knock = knock.query(options.query)
-  }
-  if (options.auth !== false) {
-    knock = knock.matchHeader('Authorization', 'Bearer ' + access_token)
-  }
-  knock.reply(options.code || 200, options.code ? '{"err":"error"}' : '{"value":"success"}')
-}
+var knocker = mH.knocker
+var testSuccess = mH.success
+var testResponseError = mH.responseError
+var testRequestError = mH.requestError
 
 describe('Mondo unit tests', function () {
-  function testSuccess (done) {
-    return function (response) {
-      if (arguments.length === 2) {
-        // response is second arg if callback
-        response = arguments[1]
-      }
-      expect(response).toEqual({value: 'success'})
-      done()
-    }
-  }
-  function testResponseError (done) {
-    return function (err) {
-      expect(err.error).toEqual({err: 'error'})
-      done()
-    }
-  }
-  function testRequestError (done) {
-    return function (err) {
-      expect(err).toMatch(/No match for request/)
-      done()
-    }
-  }
-
   beforeEach(function () {
     nock.cleanAll()
   })
@@ -67,7 +23,7 @@ describe('Mondo unit tests', function () {
   if (typeof Promise === 'undefined') {
     describe('Get a token', function () {
       function tokenNock () {
-        var successCreds = _.extend({grant_type: 'password'}, credentials)
+        var successCreds = _.extend({grant_type: 'password'}, mondargs.credentials)
         knocker({
           url: methodPaths.token,
           form: successCreds,
@@ -93,14 +49,14 @@ describe('Mondo unit tests', function () {
       })
 
       it('should send correct token request when promises are not available', function (done) {
-        mondo.token(credentials, testSuccess(done))
+        mondo.token(mondargs.credentials, testSuccess(done))
       })
       it('should send handle token response failure when promises are not available', function (done) {
-        mondo.token(_.extend({}, credentials, { client_id: 'invalid' }), testResponseError(done))
+        mondo.token(_.extend({}, mondargs.credentials, { client_id: 'invalid' }), testResponseError(done))
       })
       it('should throw an error when promises are not available if no callback is passed', function (done) {
         try {
-          mondo.token(credentials)
+          mondo.token(mondargs.credentials)
         } catch (err) {
           expect(err.message).toEqual('method.missing.callback')
           done()
