@@ -95,6 +95,17 @@ describe('Mondo unit tests', function () {
       it('should send correct token request when promises are not available', function (done) {
         mondo.token(credentials, testSuccess(done))
       })
+      it('should send handle token response failure when promises are not available', function (done) {
+        mondo.token(_.extend({}, credentials, { client_id: 'invalid' }), testResponseError(done))
+      })
+      it('should throw an error when promises are not available if no callback is passed', function (done) {
+        try {
+          mondo.token(credentials)
+        } catch (err) {
+          expect(err.message).toEqual('method.missing.callback')
+          done()
+        }
+      })
     })
   }
 })
