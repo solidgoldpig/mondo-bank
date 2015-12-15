@@ -64,14 +64,7 @@ describe('Mondo unit tests', function () {
     nock.cleanAll()
   })
 
-  if (typeof Promise === 'undefined') {
-    console.log('Not running any tests')
-    it('should send correct token request when promises are not available', function (done) {
-      //mondo.token(credentials, testSuccess(done))
-      expect(true).toBe(true)
-      done()
-    })
-  } else {
+  if (typeof Promise !== 'undefined') {
     describe('Authenticating', function () {
       describe('Get a token', function () {
         function tokenNock () {
