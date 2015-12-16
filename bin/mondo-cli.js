@@ -372,7 +372,7 @@ if (argv) {
     }
     console.log.apply(null, logArgs)
     if (fn) {
-      fn(res)
+      fn(output)
     }
   }
 
@@ -399,7 +399,7 @@ if (argv) {
   }
 
   function saveTokens (tokens) {
-    var tokensStr = JSON.stringify(tokens, null, 2)
+    var tokensStr = typeof tokens === 'object' ? JSON.stringify(tokens, null, 2) : tokens
     fs.writeFile(path.resolve(__dirname, configPaths.tokens), tokensStr, function (err) {
       if (err) {
         debug('Failed to update tokens.json', err)
