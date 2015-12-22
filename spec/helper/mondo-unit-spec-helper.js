@@ -1,3 +1,5 @@
+'use strict'
+
 var nock = require('nock')
 var apiValues = require('../../lib/api.values.json')
 
@@ -52,8 +54,8 @@ function testRequestError (done) {
 }
 
 module.exports = {
-	mondargs: mondargs,
-	knocker: knocker,
+  mondargs: mondargs,
+  knocker: knocker,
   success: testSuccess,
   responseError: testResponseError,
   requestError: testRequestError
