@@ -11,74 +11,284 @@ var mkdirp = require('mkdirp')
 var prompt = require('prompt')
 var _ = require('lodash')
 
-var validMethods = [
-  'token',
-  'refreshToken',
-  'tokenInfo',
-  'accounts',
-  'balance',
-  'transactions',
-  'transaction',
-  'annotateTransaction',
-  'createFeedItem',
-  'registerWebhook',
-  'deleteWebhook',
-  'webhooks',
-  'uploadAttachment',
-  'registerAttachment',
-  'deregisterAttachment'
-]
-var methodUsageDescription = {
-  token: 'Get a token',
-  refreshToken: 'Renew a token',
-  tokenInfo: 'Inspect authentication details',
-  accounts: 'Get list of acccounts',
-  balance: 'Get account balance',
-  transactions: 'Get list of transactions',
-  transaction: 'Get transaction details',
-  annotateTransaction: 'Annotate a transaction',
-  createFeedItem: 'Create a feed item',
-  registerWebhook: 'Register a webhook',
-  deleteWebhook: 'Delete a webhook',
-  webhooks: 'Get list of webhooks',
-  uploadAttachment: 'Request authorisation to upload an attachment',
-  registerAttachment: 'Register an attachment',
-  deregisterAttachment: 'Deregister an attachment'
-}
-var methodUsage = {
+// https://github.com/bcoe/yargs/issues/251 yargs + chalk
 
+var initialArgv = yargs.argv
+
+var paramDescriptions = {
+  access_token: 'If not passed, uses value stored in tokens.json',
+  account_id: 'If not passed, uses value specified in default.json or first account in account list',
+  transaction_id: 'If not passed, uses value specified in default.json or last transaction',
+  metadata: 'Annotation metadata object passed as key/value pairs (see examples below)',
+  date_usage: 'Date params can be passed as ISO date or a date/period recognised by moment.js'
 }
 
-yargs
-  .usage('$0 <method> or $0 --method <method>')
-  .options({
-    method: {
-      description: 'API method to call',
-      required: false,
-      choices: validMethods
-    },
-    access_token: {
-      description: 'Explicitly pass access_token'
-    },
-    refresh_token: {
-      description: 'Explicitly pass refresh_token'
-    },
-    account_id: {
-      description: 'Explicitly pass account_id'
-    },
-    config: {
-      description: 'Path where config files are stored - defaults to current working directory'
-    }
-  })
+var examples = {
+  transactions: [
+    ['--limit 5', 'Show 5 transactions at most'],
+    ['--since 7d', 'Show transactions since last 7 days'],
+    ['--before 2015-12-25', 'Show transactions before specific time'],
+    ['--before 2015-12-25T00:00:00Z', 'Show transactions before specific time']
+  ],
+  transaction: [
+    ['', 'Transaction details'],
+    ['--transaction_id trc23131231', 'Transaction details'],
+    ['--expand merchant', 'Transaction details with expanded merchant details']
+  ],
+  annotateTransaction: [
+    ['--metadata.foo bar --metadata.baz bim', 'Annotate transaction with keys foo and baz'],
+    ['--metadata.foo ""', 'Remove annotation with key foo from transaction']
+  ],
+  createFeedItem: [
+    ['--title "Hello world!" --image_url https://robohash.org/104.236.21.134.png --url http://foo.com/bar', 'Create feed item']
+  ],
+  registerWebhook: [
+    ['--url http://foo.com/bar', 'Registers webhook']
+  ],
+  deleteWebhook: [
+    ['--webhook_id wh2239123912', 'Delete webhook']
+  ],
+  webhooks: [
+    [''],
+    ['--account_id acc123456789']
+  ],
+  uploadAttachment: [
+    ['--name foo.jpg --type jpg']
+  ],
+  registerAttachment: [
+    ['--url http://foo.com/bar.jpg --type jpg']
+  ],
+  deregisterAttachment: [
+    ['--attachment_id att123456789']
+  ]
+}
 
-validMethods.forEach(function (vMethod) {
-  var example = methodUsage[vMethod] || '$0 --' + vMethod
-  yargs.example(example, methodUsageDescription[vMethod])
+// object to add auto-aliases too
+// seed with additional aliases not provided by module
+var aliases = {
+  deleteWebhook: {
+    webhook_id: ['id']
+  },
+  deregisterAttachment: {
+    attachment_id: ['id']
+  }
+}
+
+var PWD = process.env.PWD
+var configPaths = {
+  credentials: 'credentials.json',
+  tokens: 'tokens.json',
+  defaults: 'defaults.json'
+}
+var configDir = path.resolve(PWD, initialArgv.config || '', '.mondo-cli-config')
+Object.keys(configPaths).forEach(function (cPath) {
+  configPaths[cPath] = path.resolve(configDir, configPaths[cPath])
 })
 
-yargs.help('help')
+var credentials
+try {
+  credentials = require(configPaths.credentials)
+} catch (e) {
+  argv = undefined
+  mkdirp.sync(configDir)
+  prompt.message = ''
+  prompt.delimiter = ''
+  prompt.get([{
+    name: 'client_id',
+    description: 'Dev API client id >',
+    type: 'string',
+    required: true
+  }, {
+    name: 'client_secret',
+    description: 'Dev API client secret >',
+    type: 'string',
+    required: true
+  }, {
+    name: 'username',
+    description: 'Client username >',
+    type: 'string'
+  }, {
+    name: 'password',
+    description: 'Client password >',
+    type: 'string'
+  }], function (err, results) {
+    if (err) {
+      process.exit()
+    }
+    fs.writeFile(configPaths.credentials, JSON.stringify(results, null, 2), function (err) {
+      if (err) {
+        console.log('Failed to write', configPaths.credentials)
+      }
+      console.log('Wrote', configPaths.credentials)
+      console.log('Please run the command again')
+    })
+  })
+}
 
-var argv = yargs.argv
+var tokens = {}
+try {
+  tokens = require(configPaths.tokens)
+} catch (e) {}
+
+var defaults = {}
+try {
+  defaults = require(configPaths.defaults)
+} catch (e) {}
+defaults = _.extend(defaults, credentials, tokens)
+
+var validMethods = Object.keys(require('../lib/api.values.json').resources)
+
+var mondoSource = fs.readFileSync(path.resolve(__dirname, '..', 'lib/mondo.js'), 'utf8')
+var methodDocs = {}
+var methodRegex = /\/\*\*\s+\*\s*@method\s+(\w+)([\s\S]+?)\*\//
+var skipParams = ['fn']
+while (mondoSource.match(methodRegex)) {
+  mondoSource = mondoSource.replace(methodRegex, function (m, m1, m2) {
+    var description = m2.replace(/[\s\S]*@description\s*\*\s*(.*)\n[\s\S]*/, function (n, n1) {
+      return n1
+    })
+    var params = []
+    var paramAliases = {}
+    m2.replace(/@param\s+\{([^\}]+)\}\s+(\S+)\s+(.*?)\n/g, function (n, type, name, description) {
+      var required = true
+      name = name.replace(/^\[(.*)\]$/, function (o, o1) {
+        required = false
+        return o1
+      })
+      // KLUDGE
+      name = name.replace(/[^.]+\./, '')
+      // KLUDGE
+      if (name.indexOf('params.' !== -1)) {
+        name = name.replace(/params\./, '')
+      }
+      // KLUDGE
+      if (name.match(/^(account_id)$/)) {
+        required = false
+      }
+      description = paramDescriptions[name] || description
+      var aliasMatch = description.match(/Alias for (\w+)/)
+      if (aliasMatch) {
+        var aliased = aliasMatch[1]
+        paramAliases[aliased] = paramAliases[aliased] || []
+        paramAliases[aliased].push(name)
+        return
+      }
+      if (skipParams.indexOf(name) === -1 && type.indexOf('object') === -1) {
+        params.push({
+          name: name,
+          type: type,
+          description: description,
+          required: required
+        })
+      }
+      if (Object.keys(paramAliases).length) {
+        aliases[m1] = paramAliases
+      }
+    })
+    methodDocs[m1] = {
+      description: description,
+      params: params
+    }
+  })
+}
+
+// provides values for autocompletion
+if (initialArgv.completions) {
+  var completions = []
+  var methodToComplete = initialArgv._[0] ? initialArgv._[0].replace(/ .*/, '') : undefined
+  if (methodDocs[methodToComplete]) {
+    var methodCompletions = methodDocs[methodToComplete].params.map(function (p) {
+      return '--' + p.name
+    })
+    completions = methodCompletions
+  } else {
+    completions = validMethods
+  }
+  console.log(completions.join('\n'))
+  process.exit()
+}
+
+var cmd = initialArgv['$0'].replace(/.*\//, '')
+
+yargs
+  .usage(cmd + ' <command>')
+
+validMethods.forEach(function (vMethod) {
+  yargs.command(vMethod, methodDocs[vMethod].description, function (yargs) {
+    if (methodDocs[vMethod].params) {
+      var optionsParams = {}
+      var date_usage
+      methodDocs[vMethod].params.forEach(function (param) {
+        if (defaults[param.name] || (defaults[vMethod] && defaults[vMethod][param.name] !== undefined)) {
+          yargs.default(param.name, defaults[param.name] !== undefined ? defaults[param.name] : defaults[vMethod][param.name])
+        }
+        if (aliases[vMethod] && aliases[vMethod][param.name]) {
+          yargs.alias(param.name, aliases[vMethod][param.name])
+        }
+        if (param.type.indexOf('date') !== -1) {
+          date_usage = true
+        }
+        delete param.type
+        optionsParams[param.name] = param
+      })
+      yargs.usage('\n' + cmd + ' ' + vMethod + ' [options]\n\n    ' + methodDocs[vMethod].description)
+      yargs.options(optionsParams)
+      if (date_usage) {
+        yargs.epilogue(paramDescriptions.date_usage)
+      }
+      if (examples[vMethod]) {
+        examples[vMethod].forEach(function (eg) {
+          yargs.example(cmd + ' ' + vMethod + ' ' + eg[0], eg[1])
+        })
+      }
+      yargs.help('help')
+        .alias('help', 'h')
+      yargs.updateStrings({
+        'Options:': 'Options:'
+      })
+    }
+  })
+})
+
+yargs.options({
+  config: {
+    description: 'Path where config files are stored - defaults to current working directory',
+    alias: 'c'
+  },
+  verbose: {
+    count: true,
+    description: 'Verbose debug output',
+    alias: 'v'
+  }
+})
+/*
+  access_token: {
+    description: 'Explicitly pass access_token',
+    alias: 't'
+  },
+  refresh_token: {
+    description: 'Explicitly pass refresh_token'
+  },
+  account_id: {
+    description: 'Explicitly pass account_id',
+    alias: 'a'
+  },
+*/
+yargs.updateStrings({
+  'Options:': 'General Options:'
+})
+yargs.epilogue('Type ' + cmd + ' <command> -h for more information about a command')
+yargs.help('help')
+  .alias('help', 'h')
+yargs.completion('completion')
+// .alias('v', 'verbose')
+// yargs.wrap(yargs.terminalWidth())
+
+var argv = _.extend({}, yargs.argv)
+
+if (argv._.length) {
+  argv.method = argv._.shift()
+}
 
 if (argv.method) {
   argv[argv.method] = true
@@ -111,316 +321,9 @@ var accountIdArg = {
   }
 }
 
-var transactionIdArg = {
-  transaction_id: {
-    description: 'Transaction ID'
-  }
-}
-
-var accessTokenUsage = '\n\nIf access_token is not passed, uses value stored in tokens.json'
-
-var accountUsage = '\n\nIf account_id is not passed, uses value specified in default.json or first account in account list' + accessTokenUsage
-
-var transactionUsage = '\n\nIf transaction_id is not passed, uses value specified in default.json or last transaction' + accessTokenUsage
-
-if (argv.method === 'transactions') {
-  yargs.reset()
-    .usage('$0 --transactions\n\nDate params can be passed as ISO date or a date/period recognised by moment.js ')
-    .options({
-      limit: {
-        description: 'Max number of transactions to return (100 max)'
-      },
-      since: {
-        description: 'Date after which to show results'
-      },
-      before: {
-        description: 'Date before which to show results'
-      }
-    }, accessTokenArg)
-    .help('h')
-    .example('$0 --transactions --limit 5', 'Show 5 transactions at most')
-    .example('$0 --transactions --since 7d', 'Show transactions since last 7 days')
-    .example('$0 --transactions --before 2015-12-25', 'Show transactions before specific time')
-    .example('$0 --transactions --before 2015-12-25T00:00:00Z', 'Show transactions before specific time')
-    .argv
-}
-if (argv.method === 'transaction') {
-  yargs.reset()
-    .usage('$0 --transaction' + transactionUsage)
-    .options(_.extend({}, transactionIdArg, {
-      expand: {
-        description: 'Property to expand details for',
-        choices: ['merchant']
-      }
-    }, accessTokenArg))
-    .help('h')
-    .example('$0 --transaction', 'Transaction details')
-    .example('$0 --transaction --transaction_id trc23131231', 'Transaction details')
-    .example('$0 --transaction --expand merchant', 'Transaction details with expanded merchant details')
-    .argv
-}
-if (argv.method === 'annotateTransaction') {
-  yargs.reset()
-    .usage('$0 --annotateTransaction' + transactionUsage)
-    .options(_.extend({}, transactionIdArg, {
-      annotation: {
-        description: 'Key/value pair to apply to transaction',
-        type: 'array'
-      }
-    }, accessTokenArg))
-    .help('h')
-    .example('$0 --annotateTransaction --annotation.foo bar --annotation.baz bim', 'Annotate transaction with keys foo and baz')
-    .example("$0 --annotateTransaction --annotation.foo ''", 'Remove annotation with key foo from transaction')
-    .argv
-}
-if (argv.method === 'createFeedItem') {
-  yargs.reset()
-    .usage('$0 --createFeedItem' + accountUsage)
-    .options(_.extend({}, accountIdArg, {
-      'params.title': {
-        description: 'Title for feed item [required]'
-      },
-      'params.image_url': {
-        description: 'Icon for feed item [required]'
-      },
-      'params.body': {
-        description: 'Body text'
-      },
-      'params.background_color': {
-        description: 'Background colour'
-      },
-      'params.body_color': {
-        description: 'Body text colour'
-      },
-      'params.title_color': {
-        description: 'Title text colour'
-      },
-      url: {
-        description: 'URL for feed item to point to [required]'
-      }
-    }, accessTokenArg))
-    .help('h')
-    .example("$0 --createFeedItem --params.title 'Hello world!' --params.image_url https://robohash.org/104.236.21.134.png", 'Create feed item')
-    .argv
-}
-if (argv.method === 'registerWebhook') {
-  yargs.reset()
-    .usage('$0 --registerWebhook')
-    .options({
-      account_id: {
-        description: 'Account ID'
-      },
-      url: {
-        description: 'Webhook url [required]'
-      }
-    })
-    .help('h')
-    .example('$0 --registerWebhook --url http://foo.com/bar')
-    .argv
-}
-if (argv.method === 'deleteWebhook') {
-  yargs.reset()
-    .usage('$0 --deleteWebhook')
-    .options({
-      account_id: {
-        description: 'Account ID'
-      },
-      webhook_id: {
-        description: 'Webhook ID [required]'
-      }
-    })
-    .help('h')
-    .example('$0 --deleteWebhook --webhook_id wh2239123912')
-    .argv
-}
-if (argv.method === 'webhooks') {
-  yargs.reset()
-    .usage('$0 --webhooks')
-    .options({
-      account_id: {
-        description: 'Account ID'
-      }
-    })
-    .help('h')
-    .example('$0 --webhooks')
-    .example('$0 --webhooks --account_id acc123456789')
-    .argv
-}
-if (argv.method === 'uploadAttachment') {
-  yargs.reset()
-    .usage('$0 --uploadAttachment')
-    .options({
-      file: {
-        description: 'File name [required]'
-      },
-      type: {
-        description: 'File type [required]'
-      }
-    })
-    .help('h')
-    .example('$0 --uploadAttachment --name foo.jpg --type jpg')
-    .argv
-}
-if (argv.method === 'registerAttachment') {
-  yargs.reset()
-    .usage('$0 --registerAttachment')
-    .options({
-      transaction_id: {
-        description: 'Transaction ID [required]'
-      },
-      url: {
-        description: 'File url [required]'
-      },
-      type: {
-        description: 'File type [required]'
-      }
-    })
-    .help('h')
-    .example('$0 --registerAttachment --name http://foo.com/bar.jpg --type jpg')
-    .argv
-}
-if (argv.method === 'deregisterAttachment') {
-  yargs.reset()
-    .usage('$0 --deregisterAttachment')
-    .options(_.extend({
-      attachment_id: {
-        description: 'Attachment ID [required]'
-      }
-    }, accessTokenArg))
-    .help('h')
-    .example('$0 --deregisterAttachment --attachment_id att123456789')
-    .argv
-}
-
-var PWD = process.env.PWD
-var configPaths = {
-  credentials: 'credentials.json',
-  tokens: 'tokens.json',
-  defaults: 'defaults.json'
-}
-var configDir = path.resolve(PWD, argv.config || '', '.mondo-cli-config')
-Object.keys(configPaths).forEach(function (cPath) {
-  configPaths[cPath] = path.resolve(configDir, configPaths[cPath])
-})
-
-var credentials
-try {
-  credentials = require(configPaths.credentials)
-} catch (e) {
-  argv = undefined
-  mkdirp.sync(configDir)
-  prompt.message = ''
-  prompt.delimiter = ''
-  prompt.get([{
-    name: 'client_id',
-    description: 'Dev API client id >',
-    type: 'string',
-    required: true
-  }, {
-    name: 'client_secret',
-    description: 'Dev API client secret >',
-    type: 'string',
-    required: true
-  }, {
-    name: 'username',
-    description: 'Client username >',
-    type: 'string',
-    required: true
-  }, {
-    name: 'password',
-    description: 'Client password >',
-    type: 'string',
-    required: true
-  }], function (err, results) {
-    if (err) {
-      process.exit()
-    }
-    fs.writeFile(configPaths.credentials, JSON.stringify(results, null, 2), function (err) {
-      if (err) {
-        console.log('Failed to write', configPaths.credentials)
-      }
-      console.log('Wrote', configPaths.credentials)
-      console.log('Please run the command again')
-    })
-  })
-}
-
 if (argv) {
-  var defaults = {}
-  try {
-    defaults = require(configPaths.defaults)
-  } catch (e) {}
-
-  var tokens = {}
-  try {
-    tokens = require(configPaths.tokens)
-  } catch (e) {}
   var access_token = argv.access_token || tokens.access_token
   var refresh_token = argv.refresh_token || tokens.refresh_token
-
-  function debug () {
-    if (argv.debug) {
-      console.log.apply(null, arguments)
-    }
-  }
-
-  function logGeneric (logType, methodType, output, fn) {
-    var logArgs = [output]
-    if (argv.debug) {
-      logArgs.unshift(logType + '\n')
-      logArgs.unshift(methodType)
-    }
-    console.log.apply(null, logArgs)
-    if (fn) {
-      fn(output)
-    }
-  }
-
-  function logSuccess (methodType, fn) {
-    return function (res) {
-      var output = argv.length ? res[methodType].length : JSON.stringify(res, null, 2)
-      logGeneric('success', methodType, output, fn)
-    }
-  }
-
-  function logError (methodType, fn) {
-    return function (err) {
-      var errOutput = JSON.stringify(err, null, 2)
-      logGeneric('error', methodType, errOutput, fn)
-    }
-  }
-
-  function runPromise (type, typePromise, fn) {
-    var lSuccess = logSuccess(type, fn)
-    var lError = logError(type, fn)
-    typePromise
-      .then(lSuccess)
-      .catch(lError)
-  }
-
-  function saveTokens (tokens) {
-    var tokensStr = typeof tokens === 'object' ? JSON.stringify(tokens, null, 2) : tokens
-    fs.writeFile(path.resolve(__dirname, configPaths.tokens), tokensStr, function (err) {
-      if (err) {
-        debug('Failed to update tokens.json', err)
-      } else {
-        debug('Updated tokens.json')
-      }
-    })
-  }
-
-  function requiredArgs (method, argList) {
-    if (typeof argList === 'string') {
-      argList = [argList]
-    }
-    argList.forEach(function (arg) {
-      argv[arg] = argv[arg] || argv[arg.replace(/.+_id$/, 'id')] || (defaults[method] ? defaults[method][arg] : defaults[arg])
-      if (!argv[arg]) {
-        console.log('Please provide the', arg, 'arg')
-        process.exit(1)
-      }
-    })
-  }
 
   if (argv.token) {
     runPromise('token', mondo.token(credentials), saveTokens)
@@ -449,26 +352,28 @@ if (argv) {
         debug('Using transaction', transaction_id)
 
         if (argv.tokenInfo) {
-          runPromise('tokenInfo', mondo.tokenInfo(access_token))
+          var tokenInfoPromise = mondo.tokenInfo(access_token)
+          runPromise('tokenInfo', tokenInfoPromise)
         }
 
         if (argv.accounts) {
-          runPromise('accounts', mondo.accounts(access_token))
+          var accountsPromise = mondo.accounts(access_token)
+          runPromise('accounts', accountsPromise)
         }
 
         if (argv.balance) {
-          runPromise('balance', mondo.balance(account_id, access_token))
+          var balancePromise = mondo.balance(account_id, access_token)
+          runPromise('balance', balancePromise)
         }
 
         if (argv.transactions) {
           var args = {
-            account_id: account_id
+            account_id: account_id,
+            limit: argv.limit,
+            since: argv.since,
+            before: argv.before
           }
-          var defaultTrans = defaults.transactions
-          args.limit = argv.limit || defaultTrans.limit
-          args.before = argv.before || defaultTrans.before
-          args.since = argv.since || defaultTrans.since
-          function toISO (arg) {
+          var toISO = function toISO (arg) {
             if (args[arg]) {
               args[arg].replace(/(\d+)\s*(\w+)/, function (m, m1, m2) {
                 args[arg] = moment().subtract(m1, m2)
@@ -478,87 +383,140 @@ if (argv) {
           }
           toISO('since')
           toISO('before')
-          runPromise('transactions', mondo.transactions(args, access_token))
+          var transactionsPromise = mondo.transactions(args, access_token)
+          runPromise('transactions', transactionsPromise)
         }
 
         if (argv.transaction) {
-          var transaction = mondo.transaction({
+          var transactionPromise = mondo.transaction({
             transaction_id: transaction_id,
             expand: argv.expand
           }, access_token)
-          runPromise('transaction', transaction)
+          runPromise('transaction', transactionPromise)
         }
 
         if (argv.annotateTransaction) {
           // should this spanner out if no annotation passed?
-          var annotations = argv.annotation || {}
-          // var annotate = mondo.annotateTransaction(transaction_id, annotations, access_token)
-          annotations.transaction_id = transaction_id
-          var annotate = mondo.annotateTransaction(annotations, access_token)
-          runPromise('annotateTransaction', annotate)
+          var annotations = argv.metadata || argv.annotation || {}
+          var annotateTransactionPromise = mondo.annotateTransaction(transaction_id, annotations, access_token)
+          runPromise('annotateTransaction', annotateTransactionPromise)
         }
 
         if (argv.createFeedItem) {
-          argv.params = argv.params || (defaults.createFeedItem ? defaults.createFeedItem.params : {})
-          argv.url = argv.url || (defaults.createFeedItem ? defaults.createFeedItem.url : undefined)
-          requiredArgs('createFeedItem', ['url'])
-          function requiredParam (param) {
-            if (!argv.params[param]) {
-              console.log('Please provide the params.' + param, 'arg')
-              process.exit(1)
+          var paramParams = [
+            'title',
+            'image_url',
+            'body',
+            'background_color',
+            'title_color',
+            'body_color'
+          ]
+          argv.params = {}
+          paramParams.forEach(function (param) {
+            if (argv[param]) {
+              argv.params[param] = argv[param]
             }
-          }
-          requiredParam('title')
-          requiredParam('image_url')
-          var createFeedItem = mondo.createFeedItem({
+          })
+          var createFeedItemPromise = mondo.createFeedItem({
             account_id: account_id,
             params: argv.params,
             url: argv.url
           }, access_token)
-          runPromise('createFeedItem', createFeedItem)
+          runPromise('createFeedItem', createFeedItemPromise)
         }
 
         if (argv.registerWebhook) {
-          requiredArgs('registerWebhook', 'url')
-          var registerWebhook = mondo.registerWebhook(account_id, argv.url, access_token)
-          runPromise('registerWebhook', registerWebhook)
+          var registerWebhookPromise = mondo.registerWebhook(account_id, argv.url, access_token)
+          runPromise('registerWebhook', registerWebhookPromise)
         }
 
         if (argv.deleteWebhook) {
-          requiredArgs('deleteWebhook', 'webhook_id')
-          runPromise('deleteWebhook', mondo.deleteWebhook(argv.webhook_id, access_token))
+          var deleteWebhookPromise = mondo.deleteWebhook(argv.webhook_id, access_token)
+          runPromise('deleteWebhook', deleteWebhookPromise)
         }
 
         if (argv.webhooks) {
-          runPromise('webhooks', mondo.webhooks(account_id, access_token))
+          var webhooksPromise = mondo.webhooks(account_id, access_token)
+          runPromise('webhooks', webhooksPromise)
         }
 
         if (argv.uploadAttachment) {
-          requiredArgs('uploadAttachment', ['file', 'type'])
-          var uploadAttachment = mondo.uploadAttachment({
+          var uploadAttachmentPromise = mondo.uploadAttachment({
             file: argv.file,
             type: argv.type
           }, access_token)
-          runPromise('uploadAttachment', uploadAttachment)
+          runPromise('uploadAttachment', uploadAttachmentPromise)
         }
 
         if (argv.registerAttachment) {
-          requiredArgs('registerAttachment', ['url', 'type'])
-          var registerAttachment = mondo.registerAttachment({
+          var registerAttachmentPromise = mondo.registerAttachment({
             transaction_id: transaction_id,
             url: argv.url,
             type: argv.type
           }, access_token)
-          runPromise('registerAttachment', registerAttachment)
+          runPromise('registerAttachment', registerAttachmentPromise)
         }
 
         if (argv.deregisterAttachment) {
-          requiredArgs('deregisterAttachment', 'attachment_id')
-          runPromise('deregisterAttachment', mondo.deregisterAttachment(argv.attachment_id, access_token))
+          var deregisterAttachmentPromise = mondo.deregisterAttachment(argv.attachment_id, access_token)
+          runPromise('deregisterAttachment', deregisterAttachmentPromise)
         }
       })
         .catch(logError('transactions'))
     })
       .catch(logError('accounts'))
   }
+}
+
+function debug () {
+  var debugArgs = Array.prototype.slice.call(arguments)
+  // var debugLevel = debugArgs.shift()
+  if (argv.v >= 1) {
+    console.log.apply(null, debugArgs)
+  }
+}
+
+function logGeneric (logType, methodType, output, fn) {
+  var logArgs = [output]
+  if (argv.v >= 1) {
+    logArgs.unshift(logType + '\n')
+    logArgs.unshift(methodType)
+  }
+  console.log.apply(null, logArgs)
+  if (fn) {
+    fn(output)
+  }
+}
+
+function logSuccess (methodType, fn) {
+  return function (res) {
+    var output = argv.length ? res[methodType].length : JSON.stringify(res, null, 2)
+    logGeneric('success', methodType, output, fn)
+  }
+}
+
+function logError (methodType, fn) {
+  return function (err) {
+    var errOutput = JSON.stringify(err, null, 2)
+    logGeneric('error', methodType, errOutput, fn)
+  }
+}
+
+function runPromise (type, typePromise, fn) {
+  var lSuccess = logSuccess(type, fn)
+  var lError = logError(type, fn)
+  typePromise
+    .then(lSuccess)
+    .catch(lError)
+}
+
+function saveTokens (tokens) {
+  var tokensStr = typeof tokens === 'object' ? JSON.stringify(tokens, null, 2) : tokens
+  fs.writeFile(path.resolve(__dirname, configPaths.tokens), tokensStr, function (err) {
+    if (err) {
+      debug('Failed to update tokens.json', err)
+    } else {
+      debug('Updated tokens.json')
+    }
+  })
 }
