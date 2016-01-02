@@ -9,7 +9,7 @@ See https://getmondo.co.uk/docs
 
 ## Version
 
-0.1.9-branch-whooper
+0.1.9
 
 
 ## Installation
