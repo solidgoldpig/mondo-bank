@@ -13,7 +13,6 @@ var methodPaths = mondargs.api.resources
 var knocker = mH.knocker
 var testSuccess = mH.success
 var testResponseError = mH.responseError
-var testRequestError = mH.requestError
 
 describe('Mondo unit tests', function () {
   beforeEach(function () {

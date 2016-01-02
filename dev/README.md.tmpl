@@ -2,7 +2,7 @@
 
 Node wrapper for [Mondo](https://getmondo.co.uk/) API
 
-All current methods (as of 11 Dec 2015) implemented and can be used as promises or callback-style.
+All current methods (as of 2 Jan 2016) implemented and can be used as promises or callback-style.
 
 See https://getmondo.co.uk/docs
 
@@ -37,32 +37,39 @@ This generates documentation with jsdoc in the docs directory (ignored by git) a
 
 ## Command line tool
 
-If `mondo-bank` was installed with the global `-g` flag, the command `mondo` will be available.
+If `mondo-bank` is installed with the global `-g` flag, the command `mondo` will be available.
 
 Otherwise, ensure that `bin/mondo-cli.js` is in your path.
 
-
 ### CLI usage
 
-Please refer to the built-in documentation
+All methods are supported as commands of the CLI tool.
+
+2 additional commands are provided:
+
+- write
+
+  Enables writing values to config file
+- deleteToken
+
+  Deletes any saved tokens
+
+Please refer to the built-in documentation for further details.
 
     mondo --help
 
+### Bash completion
+
+Programmable completions are provided for commands and options by the `mondo.completions.bash` file in the module’s bin directory. Either source the file directly or copy it to wherever your system looks for completion files.
 
 ### CLI config files
 
-By default, the `mondo` cli tool looks for the config files it needs to run in the current working directory.
+By default, the `mondo` cli tool looks for its config file (`mondo-cli.config.json` in the user’s home directory.
 
-To override this, pass the config argument
+To override this, pass the config option or set the `mondo-cli.config` environment variable.
 
-The config files located in the config directory are:
+The config file stores developer and user details, app tokens and any default values for command options.
 
-- `credentials.json`
-  stores your developer and user details (generated if not found)
-- `tokens.json`
-  stores your app tokens
-- `defaults.json`
-  provides default values for method args
 
 ## Unlicense
 

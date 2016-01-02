@@ -11,6 +11,9 @@ module.exports = function (wallaby) {
     }, {
       pattern: 'lib/api.values.json',
       load: false
+    }, {
+      pattern: 'spec/helper/mondo-unit-spec-helper.js',
+      load: false
     }],
     tests: [
       'spec/**/*unit.spec.js'
