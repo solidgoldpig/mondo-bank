@@ -1,5 +1,7 @@
 .vscode
 .coverage/
 coverage/
+.mondo-cli.config.json
 .mondo-cli-config
 docs/
+typings/
