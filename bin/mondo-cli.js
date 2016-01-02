@@ -6,9 +6,16 @@ var mondo = require('../lib/mondo')
 var fs = require('fs')
 var path = require('path')
 var moment = require('moment')
+var yargonaut = require('yargonaut')
 var yargs = require('yargs')
+var chalk = yargonaut.chalk()
 var prompt = require('prompt')
 var _ = require('lodash')
+
+yargonaut
+  .style('blue')
+  .helpStyle('green')
+  .errorsStyle('red.bold')
 
 var commandExamples = {
   transactions: [
@@ -287,14 +294,21 @@ if (runCommand) {
   var cmd = initialArgv['$0'].replace(/.*\//, '')
 
   yargs
-    .usage(cmd + ' <command>')
+    .usage('\n' + chalk.magenta(cmd + ' <command>'))
+
+  yargs.updateStrings({
+    'Commands:': 'Commands',
+    'Options:': 'General Options',
+    'Examples:': 'Examples'
+  })
 
   validMethods.forEach(function (vMethod) {
-    yargs.command(vMethod, methodDocs[vMethod].description, function (yargs) {
+    yargs.command(chalk.blue(vMethod), methodDocs[vMethod].description)
+    yargs.command(vMethod, false, function (yargs) {
       yargs.updateStrings({
-        'Options:': 'Options:'
+        'Options:': 'Options'
       })
-      yargs.usage('\n' + cmd + ' ' + vMethod + ' [options]\n\n    ' + methodDocs[vMethod].description)
+      yargs.usage('\n' + chalk.magenta(cmd + ' ' + vMethod + ' [options]') + '\n\n    ' + methodDocs[vMethod].description)
       if (methodDocs[vMethod].params) {
         var optionsParams = {}
         var date_usage
@@ -304,7 +318,7 @@ if (runCommand) {
           } else if (defaults[param.name] || (defaults[vMethod] && defaults[vMethod][param.name] !== undefined)) {
             yargs.default(param.name, defaults[param.name] !== undefined ? defaults[param.name] : defaults[vMethod][param.name])
           }
-          if (isHelp && param.name.match(/_token$/) && defaults[param.name]) {
+          if (isHelp && param.name.match(/(_token|client_id|client_secret)$/) && defaults[param.name]) {
             yargs.default(param.name, 'Using value from config')
           }
           if (optionAliases[vMethod] && optionAliases[vMethod][param.name]) {
@@ -323,21 +337,21 @@ if (runCommand) {
       }
       if (commandExamples[vMethod]) {
         commandExamples[vMethod].forEach(function (eg) {
-          yargs.example(cmd + ' ' + vMethod + ' ' + eg[0], eg[1])
+          yargs.example(cmd + ' ' + vMethod + ' ' + eg[0], chalk.gray(eg[1]))
         })
       }
       yargs.help('help')
         .alias('help', 'h')
+        .wrap(yargs.terminalWidth())
     })
   })
 
   yargs.options(defaultOptions)
-  yargs.updateStrings({
-    'Options:': 'General Options:'
-  })
+
   yargs.epilogue('Type ' + cmd + ' <command> -h for more information about a command')
   yargs.help('help')
     .alias('help', 'h')
+    .wrap(yargs.terminalWidth())
 
   var argv = _.extend({}, yargs.argv)
 
@@ -354,9 +368,8 @@ if (runCommand) {
     methodFail = 'You must specify a command'
   }
   if (methodFail) {
-    console.log()
     yargs.showHelp()
-    console.log(methodFail)
+    console.log(chalk.red.bold(methodFail))
     process.exit(1)
   }
 
