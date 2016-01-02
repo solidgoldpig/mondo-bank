@@ -1,6 +1,6 @@
 {
   "name": "mondo-bank",
-  "version": "0.1.8",
+  "version": "0.1.9-branch",
   "description": "Node wrapper for Mondo API",
   "main": "lib/mondo.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "coverage": "istanbul cover jasmine spec/unit/**.unit.spec.js",
     "flightcheck": "npm run bumptag && npm run docs",
     "bumptag": "babel-node dev/bumptag.js",
-    "docs": "babel-node dev/generatedocs.js"
+    "docs": "babel-node dev/generatedocs.js && babel-node dev/generatedocs.js"
   },
   "bin": {
     "mondo": "bin/mondo-cli.js"

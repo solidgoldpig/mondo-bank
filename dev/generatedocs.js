@@ -31,7 +31,8 @@ mondoContents = mondoContents
   .replace(/See (https*:\/\/\S+)/g, 'See [$1]($1)')
   .replace(/@method /g, function () {
     charCount++
-    // worry about this when it looks lime there will be more than 26 methods ;)
+    // worry about this when it looks like there will be more than 26 methods ;)
+    // this keeps the order of the docs the same as in the code
     if (charCount === charRange[1]) {
       charCount = charRange[0] - 1
     }
