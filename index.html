@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home: mondo-bank</title>
+
+    <script src="scripts/jquery-1.11.2.min.js"> </script>
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+<div class="header">
+    <h1 class="page-title"><small>Home</small> mondo-bank</h1>
+</div>
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h2>Node wrapper for <a href="https://getmondo.co.uk/">Mondo</a> API</h2><p>All current methods (as of 2 Jan 2016) implemented and can be used as promises or callback-style.</p>
+<p>See <a href="https://getmondo.co.uk/docs">https://getmondo.co.uk/docs</a></p>
+<h2>Version</h2><p>0.1.9</p>
+<h2>Installation</h2><pre class="prettyprint source"><code>npm install mondo-bank</code></pre><p>Install globally, along with bundled command line tool</p>
+<pre class="prettyprint source"><code>npm install -g mondo-bank</code></pre><p>If you do not wish to install the provided command line tool, you can skip the optional dependencies</p>
+<pre class="prettyprint source"><code>npm install -g mondo-bank --no-bin-links --no-optional </code></pre><h2>Usage</h2><pre class="prettyprint source"><code>mondo = require('mondo-bank')</code></pre><p>All methods return a promise but can optionally be called with a callback function as the final argument</p>
+<h4>Promise style</h4><pre class="prettyprint source"><code>methodPromise = mondo[$method]([$params])
+methodPromise
+   .then(function(value){
+     ...
+   })
+   .catch(function(err){
+     ...
+   })</code></pre><h4>Callback style</h4><pre class="prettyprint source"><code>mondo[method]([$params], function(err, value){
+  if (err) {
+   ...
+  }
+  ...
+})</code></pre><h3>Methods</h3><p>Acquire an access token</p>
+<pre class="prettyprint source"><code>tokenPromise = mondo.token({
+  client_id: client_id,
+  client_secret: client_secret,
+  username: username,
+  password: password
+})</code></pre><p>Get information about an access token</p>
+<pre class="prettyprint source"><code>tokenInfoPromise = mondo.tokenInfo(accessToken)</code></pre><p>Refresh a proviously acquired token</p>
+<pre class="prettyprint source"><code>refreshTokenPromise = mondo.refreshToken(refreshToken)</code></pre><p>or if the client id and secret have not been previously passed</p>
+<pre class="prettyprint source"><code>refreshTokenPromise = mondo.refreshToken({
+  refreshToken: refreshToken,
+  client_id: client_id,
+  client_secret: client_secret
+})</code></pre><p>Get detailed information about customer’s accounts</p>
+<pre class="prettyprint source"><code>accountsPromise = mondo.accounts(accessToken)</code></pre><p>Get balance details for an account</p>
+<pre class="prettyprint source"><code>balancePromise = mondo.balance(account_id, access_token)</code></pre><p>List transactions</p>
+<pre class="prettyprint source"><code>transactionsPromise = mondo.transactions(account_id, access_token)</code></pre><p>or to filter the results</p>
+<pre class="prettyprint source"><code>transactionsPromise = mondo.transactions({
+  account_id: account_id,
+  since: since,
+  before: before
+  limit: limit
+}, access_token)</code></pre><p>Get details about a transaction</p>
+<pre class="prettyprint source"><code>transactionPromise = mondo.transaction(transaction_id, access_token)</code></pre><p>or to see expanded info for the merchant</p>
+<pre class="prettyprint source"><code>transactionPromise = mondo.transaction({
+  transaction_id: transaction_id,
+  expand: 'merchant'
+}, access_token)</code></pre><p>Annotate a transaction</p>
+<pre class="prettyprint source"><code>annotateTransactionPromise = mondo.annotateTransaction(transaction_id, {
+  foo: 'bar'
+}, access_token)</code></pre><p>or</p>
+<pre class="prettyprint source"><code>annotateTransactionPromise = mondo.annotateTransaction({
+  transaction_id: transaction_id,
+  foo: 'bar'
+}, access_token)</code></pre><p>or</p>
+<pre class="prettyprint source"><code>annotateTransactionPromise = mondo.annotateTransaction({
+  transaction_id: transaction_id,
+  metadata: {
+   foo: 'bar'
+  }
+}, access_token)</code></pre><p>Publish a new feed entry</p>
+<pre class="prettyprint source"><code>createFeedItemPromise = mondo.createFeedItem({
+  account_id: accountId,
+  params: {
+    title: title,
+    image_url: image_url
+  },
+  url: url
+}, access_token)</code></pre><p>Register a webhook</p>
+<pre class="prettyprint source"><code>registerWebhookPromise = mondo.registerWebhook(account_id, url, access_token)</code></pre><p>See <a href="https://getmondo.co.uk/docs/#transaction-created">https://getmondo.co.uk/docs/#transaction-created</a> for details of the transaction.created event which is sent to the webhook each time a new transaction is created in a user’s account</p>
+<p>List webhooks</p>
+<pre class="prettyprint source"><code>webhooksPromise = mondo.webhooks(account_id, access_token)</code></pre><p>Delete webhook</p>
+<pre class="prettyprint source"><code>deleteWebhookPromise = mondo.deleteWebhook(webhook_id, access_token)</code></pre><p>Register attachment</p>
+<pre class="prettyprint source"><code>registerAttachmentPromise = mondo.registerAttachment({
+  external_id: transaction_id,
+  file_type: file_type,
+  file_url: file_url
+}, access_token)</code></pre><p>Request upload attachment url</p>
+<pre class="prettyprint source"><code>uploadAttachmentPromise = mondo.uploadAttachment({
+  file_name: file_name,
+  file_type: file_type
+}, access_token)</code></pre><p>Deregister attachment</p>
+<pre class="prettyprint source"><code>deregisterAttachmentPromise = mondo.deregisterAttachment(attachment_id, access_token)</code></pre><h2>Documentation</h2><pre class="prettyprint source"><code>npm run docs</code></pre><p>This generates documentation with jsdoc in the docs directory (ignored by git) and also updates the README.md file.</p>
+<h2>Command line script</h2><p>If <code>mondo-bank</code> is installed with the global <code>-g</code> flag, the CLI script <code>mondo</code> will be available.</p>
+<p>Otherwise, ensure that <code>bin/mondo-cli.js</code> is in your path.</p>
+<h3>CLI usage</h3><p>All methods are supported as commands of the CLI script.</p>
+<p>2 additional commands are provided:</p>
+<ul>
+<li><p>write</p>
+<p>Enables writing values to config file</p>
+</li>
+<li><p>deleteToken</p>
+<p>Deletes any saved tokens</p>
+</li>
+</ul>
+<p>Please refer to the built-in documentation for further details.</p>
+<pre class="prettyprint source"><code>mondo --help</code></pre><h3>Bash completion</h3><p>Programmable completions are provided for commands and options by the <code>mondo.completions.bash</code> file in the module’s bin directory. Either source the file directly or copy it to wherever your system looks for completion files.</p>
+<h3>CLI config files</h3><p>By default, the <code>mondo</code> cli tool looks for its config file (<code>mondo-cli.config.json</code>) in the user’s home directory.</p>
+<p>To override this, pass the config option or set the <code>mondo-cli.config</code> environment variable.</p>
+<p>The config file stores developer and user details, app tokens and any default values for command options.</p></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+<div class="navwrapout">
+    <div class="navwrap"><h2><a href="index.html">mondo-bank</a></h2><div class="navsection"><h3 class="modules">Modules</h3><ul><li><a href="module-mondo-bank.html">mondo-bank</a></li></ul></div></div>
+    <div class="external-links">
+      <p class="github"><a href="https://github.com/solidgoldpig/mondo-bank" title="View mondo-bank on Github"><span>View on </span> Github</a></p>
+      <p class="codesite"><a href="http://code.solidgoldpig.com" title="View other Solidgoldpig projects">Solidgoldpig code</a></p>
+    </div>
+</div>
+</nav>
+
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
