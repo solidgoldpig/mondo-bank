@@ -1,0 +1,22 @@
+{
+  "name": "mondo-bank-gh-pages",
+  "version": "0.1.9",
+  "description": "Node wrapper for Mondo API",
+  "main": "lib/mondo.js",
+  "scripts": {
+    "test": "jasmine spec/gh-pages.spec.js"
+  },
+  "keywords": [
+    "mondo-bank",
+    "documentation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/solidgoldpig/mondo-bank.git#docs-0.1.9"
+  },
+  "author": "Alex Robinson <mondo-bank@alex.solidgoldpig.com> (http://code.solidgoldpig.com/)",
+  "license": "Unlicense",
+  "dependencies": {
+    "jasmine": "^2.4.1"
+  }
+}
