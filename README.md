@@ -1,4 +1,6 @@
 # mondo-bank
+[![npm version](https://badge.fury.io/js/mondo-bank.svg)](https://badge.fury.io/js/mondo-bank)
+[![Build status](https://api.travis-ci.org/solidgoldpig/mondo-bank.svg?branch=master)](https://travis-ci.org/solidgoldpig/mondo-bank?branch=master)
 
 Node wrapper for [Mondo](https://getmondo.co.uk/) API
 
