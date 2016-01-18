@@ -286,6 +286,10 @@ if (runCommand) {
       completions = methodCompletions
     } else {
       completions = validMethods
+      for (var dOption in defaultOptions) {
+        completions.push('--' + dOption)
+      }
+      completions.push('--help')
     }
     console.log(completions.join('\n'))
     process.exit()
