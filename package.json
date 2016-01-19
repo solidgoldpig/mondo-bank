@@ -4,9 +4,12 @@
   "description": "Node wrapper for Mondo API",
   "main": "lib/mondo.js",
   "scripts": {
+    "postinstall": "cp dev/githooks/pre-commit .git/hooks/pre-commit",
     "test": "npm run unit-tests",
     "unit-tests": "jasmine spec/unit/**.unit.spec.js",
     "integration-tests": "jasmine spec/integration/**.integration.spec.js",
+    "lint": "standard lib/**/*.js && standard bin/**/*.js && standard spec/**/*.js",
+    "lint-files-to-commit": "git diff --name-only --cached --relative | /usr/bin/grep '\\.js$' | xargs standard",
     "coverage": "istanbul cover jasmine spec/unit/**.unit.spec.js",
     "flightcheck": "npm run bumptag && npm run docs",
     "bumptag": "babel-node dev/bumptag.js",
@@ -51,6 +54,7 @@
     "nock": "^3.3.2",
     "requizzle": "^0.2.1",
     "rimraf": "^2.4.4",
+    "standard": "^5.4.1",
     "tmp": "0.0.28",
     "to-markdown": "^2.0.1"
   },
@@ -59,5 +63,14 @@
     "prompt": "^0.2.14",
     "yargonaut": "^1.1.2",
     "yargs": "^3.31.0"
+  },
+  "standard": {
+    "globals": [
+      "expect",
+      "describe",
+      "it",
+      "beforeEach",
+      "afterEach"
+    ]
   }
 }

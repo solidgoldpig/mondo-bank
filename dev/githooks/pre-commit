@@ -1,0 +1,3 @@
+#!/bin/sh
+
+sh ./dev/githooks/pre-commit.sh
