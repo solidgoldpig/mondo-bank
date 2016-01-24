@@ -1,5 +1,5 @@
 {
-  "host": "https://production-api.gmon.io",
+  "host": "https://api.getmondo.co.uk",
   "resources": {
     "token": "/oauth2/token",
     "tokenInfo": "/ping/whoami",

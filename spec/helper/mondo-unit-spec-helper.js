@@ -17,7 +17,7 @@ mondargs.account_id = 'valid'
 mondargs.transaction_id = 'valid'
 
 function knocker (options) {
-  var knock = nock(mondargs.api.host)
+  var knock = nock(options.host || mondargs.api.host)
   if (options.form && !options.method) {
     options.method = 'post'
   }
