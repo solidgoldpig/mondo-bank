@@ -12,7 +12,7 @@ See [https://getmondo.co.uk/docs](https://getmondo.co.uk/docs)
 
 ## Version
 
-0.1.9-3
+0.1.10
 
 
 ## Installation
