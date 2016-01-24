@@ -1,5 +1,10 @@
 .babelrc
 .eslintrc
+.ignore
+.npmignore
+.travis.yml
 jsconfig.json
 dev
 docs
+out
+*.tgz
