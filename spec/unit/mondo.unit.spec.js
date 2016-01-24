@@ -483,5 +483,21 @@ describe('Mondo unit tests', function () {
         mondo.deregisterAttachment(attachment_id, mondargs.access_token, testSuccess(done))
       })
     })
+
+    describe('Dev Methods', function () {
+      function setHostNock () {
+        knocker({
+          host: 'http://localhost:9090',
+          url: methodPaths.accounts
+        })
+      }
+      beforeEach(function () {
+        setHostNock()
+      })
+      it('should send correct accounts request', function (done) {
+        mondo.setHost('http://localhost:9090')
+        mondo.accounts(mondargs.access_token).then(testSuccess(done))
+      })
+    })
   }
 })

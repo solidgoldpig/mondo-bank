@@ -2,16 +2,19 @@
 [![npm version](https://badge.fury.io/js/mondo-bank.svg)](https://badge.fury.io/js/mondo-bank)
 [![Build status](https://api.travis-ci.org/solidgoldpig/mondo-bank.svg?branch=master)](https://travis-ci.org/solidgoldpig/mondo-bank?branch=master)
 
+[![npm version](https://badge.fury.io/js/mondo-bank.svg)](https://badge.fury.io/js/mondo-bank)
+[![Build status](https://api.travis-ci.org/solidgoldpig/mondo-bank.svg)](https://travis-ci.org/solidgoldpig/mondo-bank)
+
 Node wrapper for [Mondo](https://getmondo.co.uk/) API
 
 All current methods (as of 2 Jan 2016) implemented and can be used as promises or callback-style.
 
-See https://getmondo.co.uk/docs
+See [https://getmondo.co.uk/docs](https://getmondo.co.uk/docs)
 
 
 ## Version
 
-0.1.9
+0.1.9-2
 
 
 ## Installation
@@ -177,6 +180,13 @@ Request upload attachment url
 Deregister attachment
 
     deregisterAttachmentPromise = mondo.deregisterAttachment(attachment_id, access_token)
+
+
+## Dev mode
+
+Set the Mondo API host
+
+    mondo.setHost('https://staging-api.getmondo.co.uk')
 
 
 ## Documentation

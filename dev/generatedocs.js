@@ -10,7 +10,9 @@ import toMarkdown from 'to-markdown'
 
 let packagePath = path.resolve(__dirname, '..', 'package.json')
 let inputPath = './lib/mondo.js'
-let tmpDocPath = tmp.dirSync().name + '/mondo.js'
+let tmpPath = tmp.dirSync().name
+let tmpDocPath = path.resolve(tmpPath, 'mondo.js')
+// let tmpReadme = path.resolve(tmpPath, 'README.md')
 let jsdocConf = './dev/jsdoc.conf.json'
 let readmePath = './README.md'
 let readmeTemplate = './dev/README.md.tmpl'
