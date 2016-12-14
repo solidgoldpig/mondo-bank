@@ -194,33 +194,40 @@ describe('Mondo unit tests', function () {
         transKnocker({ limit: 10 })
         transKnocker({ since: /\d\d\d\d-\d\d-\d\dT\d\d/ })
         transKnocker({ before: /\d\d\d\d-\d\d-\d\dT\d\d/ })
+        transKnocker({ 'expand[]': 'merchant' })
       }
 
       beforeEach(function () {
         transactionsNock()
       })
-      it('should send correct balance request', function (done) {
+      it('should send correct transactions request', function (done) {
         mondo.transactions(mondargs.account_id, mondargs.access_token).then(testSuccess(done))
       })
-      it('should send correct balance request when using callback', function (done) {
+      it('should send correct transactions request when using callback', function (done) {
         mondo.transactions(mondargs.account_id, mondargs.access_token, testSuccess(done))
       })
-      it('should send correct balance request with limit', function (done) {
+      it('should send correct transactions request with limit', function (done) {
         mondo.transactions({
           account_id: mondargs.account_id,
           limit: 10
         }, mondargs.access_token).then(testSuccess(done))
       })
-      it('should send correct balance request with ISO date string', function (done) {
+      it('should send correct transactions request with ISO date string', function (done) {
         mondo.transactions({
           account_id: mondargs.account_id,
           since: '2015-11-10T23:00:00Z'
         }, mondargs.access_token).then(testSuccess(done))
       })
-      it('should send correct balance request with date object', function (done) {
+      it('should send correct transactions request with date object', function (done) {
         mondo.transactions({
           account_id: mondargs.account_id,
           before: new Date()
+        }, mondargs.access_token).then(testSuccess(done))
+      })
+      it('should send correct transactions request when expand param passed', function (done) {
+        mondo.transactions({
+          account_id: mondargs.account_id,
+          expand: 'merchant'
         }, mondargs.access_token).then(testSuccess(done))
       })
     })
