@@ -1,5 +1,9 @@
 # mondo-bank
 
+## THIS MODULE IS DEPRECATED FOLLOWING MONDO‘S RENAMING TO MONZO
+
+## PLEASE USE `monzo-bank` instead
+
 [![npm version](https://badge.fury.io/js/mondo-bank.svg)](https://badge.fury.io/js/mondo-bank)
 [![Build status](https://api.travis-ci.org/solidgoldpig/mondo-bank.svg)](https://travis-ci.org/solidgoldpig/mondo-bank)
 
@@ -12,7 +16,7 @@ See [https://getmondo.co.uk/docs](https://getmondo.co.uk/docs)
 
 ## Version
 
-0.1.12
+0.1.13
 
 
 ## Installation
